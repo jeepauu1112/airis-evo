@@ -214,7 +214,7 @@ export default function AirisGemini() {
                   {/* MESSAGE BUBBLE */}
                   <div className={`flex-1 max-w-xs md:max-w-2xl px-4 md:px-5 py-3 md:py-4 rounded-2xl transition-all duration-200 ${
                     m.role === 'user' 
-                      ? 'bg-gray-700 dark:bg-gray-600 text-gray-50 rounded-3xl rounded-br-none shadow-md' 
+                      ? 'bg-gray-100 dark:bg-[#1e1f20] text-gray-800 dark:text-[#e3e3e3] rounded-3xl rounded-br-none' 
                       : 'bg-gray-100 dark:bg-[#1e1f20] text-gray-800 dark:text-[#e3e3e3]'
                   }`}>
                     <div className="text-sm md:text-base leading-relaxed">

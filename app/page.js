@@ -1,6 +1,7 @@
 "use client";
 import { useState, useRef, useEffect } from 'react';
-import { Brain, Menu, X, Calendar, MessageSquare, Send, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Brain, Menu, X, Calendar, MessageSquare, Send, Trash2, ChevronLeft, ChevronRight, Copy, Check, BarChart3 } from 'lucide-react';
+import AnalysisDashboard from './components/AnalysisDashboard';
 
 export default function AirisGemini() {
   const [activeTab, setActiveTab] = useState("chat");
@@ -9,6 +10,7 @@ export default function AirisGemini() {
   const [isLoading, setIsLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [copiedIndex, setCopiedIndex] = useState(null);
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -16,6 +18,14 @@ export default function AirisGemini() {
   useEffect(() => {
     document.documentElement.classList.add('dark');
   }, []);
+
+  // Copy to clipboard function
+  const copyToClipboard = (text, index) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedIndex(index);
+      setTimeout(() => setCopiedIndex(null), 2000);
+    });
+  };
 
   // Auto scroll to newest message
   useEffect(() => {
@@ -126,7 +136,7 @@ export default function AirisGemini() {
           sidebarCollapsed ? 'text-sm justify-center' : 'text-2xl'
         }`}>
           <div className="w-2 h-2 rounded-full bg-[#00A3AD] animate-pulse"></div>
-          {!sidebarCollapsed && ''}
+          {!sidebarCollapsed && 'Kalbar-1'}
         </div>
 
         {/* NAV BUTTONS */}
@@ -139,6 +149,17 @@ export default function AirisGemini() {
         >
           <MessageSquare size={20} /> 
           {!sidebarCollapsed && <span className="font-medium">Chat</span>}
+        </button>
+
+        <button 
+          onClick={() => { setActiveTab("analysis"); setSidebarOpen(false); }} 
+          className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+            activeTab === 'analysis' ? 'bg-gradient-to-r from-[#00A3AD] to-[#008a8f] text-white shadow-lg scale-105' : 'hover:bg-gray-200 dark:hover:bg-[#333537] text-gray-600 dark:text-[#c4c7c5]'
+          } ${sidebarCollapsed ? 'lg:justify-center' : ''}`}
+          title={sidebarCollapsed ? 'Analysis' : ''}
+        >
+          <BarChart3 size={20} /> 
+          {!sidebarCollapsed && <span className="font-medium">Analysis</span>}
         </button>
 
         {/* CLEAR CHAT BUTTON */}
@@ -212,7 +233,7 @@ export default function AirisGemini() {
                   )}
 
                   {/* MESSAGE BUBBLE */}
-                  <div className={`flex-1 max-w-xs md:max-w-2xl px-4 md:px-5 py-3 md:py-4 rounded-2xl transition-all duration-200 ${
+                  <div className={`flex-1 max-w-xs md:max-w-2xl px-4 md:px-5 py-3 md:py-4 rounded-2xl transition-all duration-200 group ${
                     m.role === 'user' 
                       ? 'bg-gray-100 dark:bg-[#1e1f20] text-gray-800 dark:text-[#e3e3e3] rounded-3xl rounded-br-none' 
                       : 'bg-gray-100 dark:bg-[#1e1f20] text-gray-800 dark:text-[#e3e3e3]'
@@ -220,6 +241,19 @@ export default function AirisGemini() {
                     <div className="text-sm md:text-base leading-relaxed">
                       {renderContent(m.content)}
                     </div>
+                    {m.role === 'assistant' && (
+                      <button
+                        onClick={() => copyToClipboard(m.content, i)}
+                        className="mt-2 text-xs px-2 py-1 rounded transition-all flex items-center gap-1 text-gray-500 dark:text-[#8a8c8e] hover:bg-gray-200 dark:hover:bg-[#2a2b2c]"
+                        title="Copy response"
+                      >
+                        {copiedIndex === i ? (
+                          <><Check size={14} /> Copied!</>
+                        ) : (
+                          <><Copy size={14} /> Copy</>
+                        )}
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -285,6 +319,9 @@ export default function AirisGemini() {
               </div>
             </div>
           </>
+        ) : activeTab === "analysis" ? (
+          // ANALYSIS TAB
+          <AnalysisDashboard />
         ) : (
           // PLACEHOLDER FOR OTHER TABS
           <div className="flex-1 flex flex-col items-center justify-center p-10 text-center text-gray-500 dark:text-[#8a8c8e]">

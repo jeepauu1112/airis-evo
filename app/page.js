@@ -1,6 +1,6 @@
 "use client";
 import { useState, useRef, useEffect } from 'react';
-import { Brain, Menu, X, Calendar, MessageSquare, Send, Trash2, ChevronLeft, ChevronRight, Copy, Check, BarChart3 } from 'lucide-react';
+import { Infinity, Menu, X, MessageSquare, Send, Trash2, ChevronLeft, ChevronRight, Copy, Check, BarChart3 } from 'lucide-react';
 import AnalysisDashboard from './components/AnalysisDashboard';
 
 export default function AirisGemini() {
@@ -71,9 +71,9 @@ export default function AirisGemini() {
         const cells = line.split('|').filter(c => c.trim() !== "");
         if (line.includes('---')) return null;
         return (
-          <div key={i} className="grid grid-cols-2 gap-4 border-b border-gray-200 dark:border-[#444746] py-3 hover:bg-gray-50 dark:hover:bg-[#2a2b2c] px-3 transition text-sm md:text-base">
+          <div key={i} className="grid grid-cols-2 gap-4 border-b border-slate-700 py-3 hover:bg-slate-700/30 px-3 transition text-sm md:text-base">
             {cells.map((cell, j) => (
-              <span key={j} className={j === 0 ? "font-semibold text-gray-800 dark:text-[#e3e3e3]" : "text-gray-600 dark:text-[#c4c7c5]"}>
+              <span key={j} className={j === 0 ? "font-semibold text-slate-100" : "text-slate-300"}>
                 {cell.replace(/\*\*/g, '').trim()}
               </span>
             ))}
@@ -85,13 +85,13 @@ export default function AirisGemini() {
       const parts = line.split(/(\*\*.*?\*\*)/g);
       const formattedLine = parts.map((part, index) => {
         if (part.startsWith('**') && part.endsWith('**')) {
-          return <strong key={index} className="font-bold text-gray-900 dark:text-white">{part.replace(/\*\*/g, '')}</strong>;
+          return <strong key={index} className="font-bold text-slate-100">{part.replace(/\*\*/g, '')}</strong>;
         }
         return part;
       });
 
       return (
-        <p key={i} className="mb-4 leading-relaxed text-base md:text-lg text-gray-800 dark:text-[#e3e3e3] font-normal">
+        <p key={i} className="mb-4 leading-relaxed text-base md:text-lg text-slate-200 font-normal">
           {formattedLine}
         </p>
       );
@@ -99,25 +99,25 @@ export default function AirisGemini() {
   };
 
   return (
-    <div className="flex h-screen bg-white dark:bg-[#131314] text-gray-900 dark:text-[#e3e3e3]">
+    <div className="flex h-screen bg-slate-950 dark:bg-slate-950 text-slate-100 dark:text-slate-100">
       
       {/* MOBILE SIDEBAR OVERLAY */}
       {sidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-20 lg:hidden transition-opacity"
+          className="fixed inset-0 bg-black/60 z-20 lg:hidden transition-opacity backdrop-blur-sm"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* SIDEBAR */}
-      <aside className={`fixed lg:static inset-y-0 left-0 z-30 bg-gray-50 dark:bg-[#1e1f20] p-4 flex flex-col gap-3 border-r border-gray-200 dark:border-[#444746] transition-all duration-300 transform ${
+      <aside className={`fixed lg:static inset-y-0 left-0 z-30 bg-gradient-to-b from-slate-900 to-slate-950 dark:from-slate-900 dark:to-slate-950 p-4 flex flex-col gap-3 border-r border-slate-800 dark:border-slate-800 transition-all duration-300 transform shadow-2xl ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       } lg:translate-x-0 ${sidebarCollapsed ? 'lg:w-20' : 'lg:w-64'}`}>
         
         {/* Close button on mobile */}
         <button 
           onClick={() => setSidebarOpen(false)}
-          className="lg:hidden mb-4 p-2 hover:bg-gray-200 dark:hover:bg-[#333537] rounded-lg transition"
+          className="lg:hidden mb-4 p-2 hover:bg-slate-800 dark:hover:bg-slate-800 rounded-lg transition text-slate-200"
         >
           <X size={24} />
         </button>
@@ -125,25 +125,25 @@ export default function AirisGemini() {
         {/* Collapse/Expand button on desktop */}
         <button
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          className="hidden lg:flex items-center justify-center p-2 hover:bg-gray-200 dark:hover:bg-[#333537] rounded-lg transition mb-4"
+          className="hidden lg:flex items-center justify-center p-2 hover:bg-slate-800 dark:hover:bg-slate-800 rounded-lg transition mb-4 text-slate-400"
           title={sidebarCollapsed ? "Luaskan menu" : "Ciutkan menu"}
         >
           {sidebarCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
         </button>
 
         {/* LOGO */}
-        <div className={`text-[#00A3AD] font-bold px-3 mb-8 flex items-center gap-2 transition-all duration-300 ${
+        <div className={`text-cyan-400 font-bold px-3 mb-8 flex items-center gap-2 transition-all duration-300 ${
           sidebarCollapsed ? 'text-sm justify-center' : 'text-2xl'
         }`}>
-          <div className="w-2 h-2 rounded-full bg-[#00A3AD] animate-pulse"></div>
-          {!sidebarCollapsed && 'Kalbar-1'}
+          <div className="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 animate-pulse shadow-lg shadow-cyan-400/50"></div>
+          {!sidebarCollapsed && <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400">Kalbar-1</span>}
         </div>
 
         {/* NAV BUTTONS */}
         <button 
           onClick={() => { setActiveTab("chat"); setSidebarOpen(false); }} 
           className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
-            activeTab === 'chat' ? 'bg-gradient-to-r from-[#00A3AD] to-[#008a8f] text-white shadow-lg scale-105' : 'hover:bg-gray-200 dark:hover:bg-[#333537] text-gray-600 dark:text-[#c4c7c5]'
+            activeTab === 'chat' ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg shadow-cyan-500/50 scale-105' : 'hover:bg-slate-800 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-200'
           } ${sidebarCollapsed ? 'lg:justify-center' : ''}`}
           title={sidebarCollapsed ? 'Chat' : ''}
         >
@@ -154,7 +154,7 @@ export default function AirisGemini() {
         <button 
           onClick={() => { setActiveTab("analysis"); setSidebarOpen(false); }} 
           className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
-            activeTab === 'analysis' ? 'bg-gradient-to-r from-[#00A3AD] to-[#008a8f] text-white shadow-lg scale-105' : 'hover:bg-gray-200 dark:hover:bg-[#333537] text-gray-600 dark:text-[#c4c7c5]'
+            activeTab === 'analysis' ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg shadow-cyan-500/50 scale-105' : 'hover:bg-slate-800 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-200'
           } ${sidebarCollapsed ? 'lg:justify-center' : ''}`}
           title={sidebarCollapsed ? 'Analysis' : ''}
         >
@@ -165,7 +165,7 @@ export default function AirisGemini() {
         {/* CLEAR CHAT BUTTON */}
         <button 
           onClick={() => { setMessages([]); setSidebarOpen(false); }} 
-          className={`mt-auto flex items-center gap-3 px-4 py-3 text-red-500 dark:text-[#f2b8b5] hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all duration-200 ${sidebarCollapsed ? 'lg:justify-center' : ''}`}
+          className={`mt-auto flex items-center gap-3 px-4 py-3 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded-xl transition-all duration-200 ${sidebarCollapsed ? 'lg:justify-center' : ''}`}
           title={sidebarCollapsed ? 'Clear Chat' : ''}
         >
           <Trash2 size={20} /> 
@@ -173,24 +173,24 @@ export default function AirisGemini() {
         </button>
 
         {/* FOOTER TEXT */}
-        <div className={`text-xs text-gray-500 dark:text-[#8a8c8e] px-3 py-2 transition-all duration-300 ${sidebarCollapsed ? 'lg:text-center' : ''}`}>
+        <div className={`text-xs text-slate-500 px-3 py-2 transition-all duration-300 ${sidebarCollapsed ? 'lg:text-center' : ''}`}>
           {!sidebarCollapsed ? '© 2026 AIRIS' : '©'}
         </div>
       </aside>
 
       {/* MAIN CONTENT */}
-      <div className="flex-1 flex flex-col relative overflow-hidden">
+      <div className="flex-1 flex flex-col relative overflow-hidden bg-gradient-to-b from-slate-950 to-slate-900 dark:from-slate-950 dark:to-slate-900">
         
         {/* HEADER */}
-        <div className="flex items-center justify-between px-4 md:px-6 py-4 border-b border-gray-200 dark:border-[#444746] bg-white dark:bg-[#131314]">
+        <div className="flex items-center justify-between px-4 md:px-6 py-4 border-b border-slate-800 dark:border-slate-800 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 shadow-xl">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="lg:hidden p-2 hover:bg-gray-100 dark:hover:bg-[#2a2b2c] rounded-lg transition"
+            className="lg:hidden p-2 hover:bg-slate-800 rounded-lg transition text-slate-300"
           >
             <Menu size={24} />
           </button>
           
-          <h1 className="flex-1 lg:flex-none text-center lg:text-left text-4xl font-bold tracking-tight text-[#00A3AD]" style={{fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', letterSpacing: '-0.02em'}}>
+          <h1 className="flex-1 lg:flex-none text-center lg:text-left text-4xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-cyan-400" style={{fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', letterSpacing: '-0.02em'}}>
             Airis-Evo
           </h1>
           
@@ -201,19 +201,33 @@ export default function AirisGemini() {
         {activeTab === "chat" ? (
           <>
             {/* MESSAGES AREA */}
-            <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 md:space-y-8">
+            <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 md:space-y-8 bg-gradient-to-b from-slate-900 to-slate-950">
               {/* WELCOME STATE */}
               {messages.length === 0 && (
-                <div className="h-full flex flex-col items-center justify-center text-gray-400 dark:text-[#c4c7c5] text-center px-4">
-                  <div className="w-12 md:w-16 h-12 md:h-16 bg-gradient-to-br from-[#00A3AD] to-[#004a4d] rounded-full mb-6 md:mb-8 flex items-center justify-center shadow-lg">
-                    <Brain size={32} className="text-white md:w-9 md:h-9" />
+                <div className="h-full flex flex-col items-center justify-center text-slate-400 text-center px-4">
+                  <div className="w-20 md:w-24 h-20 md:h-24 bg-gradient-to-br from-cyan-500 via-blue-500 to-purple-500 rounded-3xl mb-8 md:mb-12 flex items-center justify-center shadow-2xl shadow-cyan-500/40 animate-glow" aria-hidden>
+                    <Infinity size={48} className="text-white" />
                   </div>
-                  <h1 className="text-3xl md:text-5xl font-bold mb-3 text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-purple-500 to-[#00A3AD]">
+                  <h1 className="text-4xl md:text-6xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 animate-fadeInUp">
                     SEMANGAT PAGI!
                   </h1>
-                  <p className="text-lg md:text-2xl text-gray-600 dark:text-[#c4c7c5] max-w-md">
-                    Saya siap membantu Anda dengan berbagai pertanyaan dan tugas.
+                  <p className="text-lg md:text-2xl text-slate-300 max-w-md leading-relaxed mb-8 animate-slideInRight">
+                    Saya siap membantu Anda dengan berbagai pertanyaan dan tugas analisis.
                   </p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-2xl">
+                    <div className="p-4 rounded-lg bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-cyan-500/20 hover:border-cyan-500/50 transition">
+                      <div className="text-2xl mb-2">💬</div>
+                      <p className="text-sm font-medium text-slate-300">Tanya Kapan Saja</p>
+                    </div>
+                    <div className="p-4 rounded-lg bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-500/20 hover:border-blue-500/50 transition">
+                      <div className="text-2xl mb-2">📊</div>
+                      <p className="text-sm font-medium text-slate-300">Analisis Data</p>
+                    </div>
+                    <div className="p-4 rounded-lg bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20 hover:border-purple-500/50 transition">
+                      <div className="text-2xl mb-2">⚡</div>
+                      <p className="text-sm font-medium text-slate-300">Respon Cepat</p>
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -221,22 +235,22 @@ export default function AirisGemini() {
               {messages.map((m, i) => (
                 <div 
                   key={i} 
-                  className={`flex gap-3 md:gap-4 max-w-4xl mx-auto w-full animate-in fade-in slide-in-from-bottom-2 ${
+                  className={`flex gap-3 md:gap-4 max-w-4xl mx-auto w-full animate-fadeInUp ${
                     m.role === 'user' ? 'justify-end' : 'justify-start'
                   }`}
                 >
                   {/* ASSISTANT AVATAR */}
                   {m.role === 'assistant' && (
-                    <div className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-gradient-to-br from-[#00A3AD] to-[#004a4d] flex-shrink-0 flex items-center justify-center mt-1 shadow-md">
-                      <Brain size={18} className="text-white" />
+                    <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-cyan-500 to-blue-500 flex-shrink-0 flex items-center justify-center mt-1 shadow-lg shadow-cyan-500/40">
+                      <Infinity size={20} className="text-white" />
                     </div>
                   )}
 
                   {/* MESSAGE BUBBLE */}
-                  <div className={`flex-1 max-w-xs md:max-w-2xl px-4 md:px-5 py-3 md:py-4 rounded-2xl transition-all duration-200 group ${
+                  <div className={`flex-1 max-w-xs md:max-w-2xl px-5 md:px-6 py-3 md:py-4 rounded-2xl transition-all duration-200 group ${
                     m.role === 'user' 
-                      ? 'bg-gray-100 dark:bg-[#1e1f20] text-gray-800 dark:text-[#e3e3e3] rounded-3xl rounded-br-none' 
-                      : 'bg-gray-100 dark:bg-[#1e1f20] text-gray-800 dark:text-[#e3e3e3]'
+                      ? 'bg-gradient-to-br from-cyan-500 to-blue-500 text-white rounded-3xl rounded-tr-md shadow-lg shadow-cyan-500/20' 
+                      : 'bg-slate-800 text-slate-100 border border-slate-700'
                   }`}>
                     <div className="text-sm md:text-base leading-relaxed">
                       {renderContent(m.content)}
@@ -244,7 +258,7 @@ export default function AirisGemini() {
                     {m.role === 'assistant' && (
                       <button
                         onClick={() => copyToClipboard(m.content, i)}
-                        className="mt-2 text-xs px-2 py-1 rounded transition-all flex items-center gap-1 text-gray-500 dark:text-[#8a8c8e] hover:bg-gray-200 dark:hover:bg-[#2a2b2c]"
+                        className="mt-2 text-xs px-2 py-1 rounded transition-all flex items-center gap-1 text-slate-400 hover:text-slate-200 hover:bg-slate-700"
                         title="Copy response"
                       >
                         {copiedIndex === i ? (
@@ -260,14 +274,17 @@ export default function AirisGemini() {
 
               {/* LOADING INDICATOR */}
               {isLoading && (
-                <div className="flex gap-3 md:gap-4 max-w-4xl mx-auto w-full animate-in fade-in slide-in-from-bottom-2">
-                  <div className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-gradient-to-br from-[#00A3AD] to-[#004a4d] flex-shrink-0 flex items-center justify-center mt-1">
-                    <Brain size={18} className="text-white animate-pulse" />
+                <div className="flex gap-3 md:gap-4 max-w-4xl mx-auto w-full animate-fadeInUp">
+                  <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-cyan-500 to-blue-500 flex-shrink-0 flex items-center justify-center mt-1 shadow-lg shadow-cyan-500/40">
+                    <Infinity size={20} className="text-white animate-pulse" />
                   </div>
-                  <div className="flex items-center gap-1 px-4 md:px-5 py-3 md:py-4 rounded-2xl bg-gray-100 dark:bg-[#1e1f20]">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.4s'}}></div>
+                  <div className="flex items-center gap-2 px-5 md:px-6 py-3 md:py-4 rounded-2xl bg-slate-800 border border-slate-700">
+                    <span className="text-slate-300 mr-3">Airis mengetik</span>
+                    <div className="typing-dots">
+                      <span className="dot" />
+                      <span className="dot" style={{animationDelay: '0.12s'}} />
+                      <span className="dot" style={{animationDelay: '0.24s'}} />
+                    </div>
                   </div>
                 </div>
               )}
@@ -276,13 +293,13 @@ export default function AirisGemini() {
             </div>
 
             {/* INPUT AREA */}
-            <div className="px-4 md:px-8 py-4 md:py-6 bg-white dark:bg-[#131314] border-t border-gray-200 dark:border-[#444746]">
+            <div className="px-4 md:px-8 py-4 md:py-6 bg-gradient-to-t from-slate-950 to-slate-900 border-t border-slate-800 shadow-2xl shadow-black/50">
               <div className="max-w-2xl mx-auto flex flex-col gap-3">
                 {/* INPUT BOX */}
-                <div className="flex gap-2 items-center bg-gray-100 dark:bg-[#2a2b2c] rounded-full px-4 md:px-6 py-2 md:py-3 border-2 border-transparent focus-within:border-[#00A3AD] transition-all duration-200 shadow-sm hover:shadow-md">
+                <div className="flex gap-2 items-center bg-slate-800 rounded-full px-4 md:px-6 py-2 md:py-3 border-2 border-slate-700 focus-within:border-cyan-500 focus-within:shadow-lg focus-within:shadow-cyan-500/30 transition-all duration-200 hover:border-slate-600">
                   <input 
                     ref={inputRef}
-                    className="flex-1 bg-transparent outline-none text-gray-900 dark:text-[#e3e3e3] placeholder-gray-500 dark:placeholder-[#8a8c8e] text-sm md:text-base" 
+                    className="flex-1 bg-transparent outline-none text-slate-100 placeholder-slate-500 text-sm md:text-base" 
                     placeholder="Tanya apa saja..." 
                     value={input} 
                     onChange={(e) => setInput(e.target.value)} 
@@ -299,8 +316,8 @@ export default function AirisGemini() {
                     disabled={!input.trim() || isLoading}
                     className={`p-2 md:p-2 rounded-full transition-all duration-200 transform ${
                       input.trim() && !isLoading
-                        ? 'text-[#00A3AD] hover:bg-gray-200 dark:hover:bg-[#3a3b3c] active:scale-95' 
-                        : 'text-gray-300 dark:text-[#42464a] cursor-not-allowed'
+                        ? 'text-cyan-400 hover:bg-slate-700 hover:text-cyan-300 active:scale-95' 
+                        : 'text-slate-600 cursor-not-allowed'
                     }`}
                   >
                     <Send size={20} />
@@ -309,10 +326,10 @@ export default function AirisGemini() {
 
                 {/* DISCLAIMER */}
                 <div className="text-center space-y-1">
-                  <p className="text-xs md:text-xs text-gray-500 dark:text-[#8a8c8e]">
+                  <p className="text-xs md:text-xs text-slate-500">
                     A.I.R.I.S dapat melakukan kesalahan. Periksa informasi penting.
                   </p>
-                  <p className="text-xs text-gray-400 dark:text-[#71777a]">
+                  <p className="text-xs text-slate-600">
                     Dikembangkan oleh Rizky Fauzi
                   </p>
                 </div>
@@ -320,16 +337,8 @@ export default function AirisGemini() {
             </div>
           </>
         ) : activeTab === "analysis" ? (
-          // ANALYSIS TAB
           <AnalysisDashboard />
-        ) : (
-          // PLACEHOLDER FOR OTHER TABS
-          <div className="flex-1 flex flex-col items-center justify-center p-10 text-center text-gray-500 dark:text-[#8a8c8e]">
-            <Calendar size={64} className="mb-6 opacity-50" />
-            <h2 className="text-3xl font-semibold mb-2">Jadwal Kapal</h2>
-            <p className="text-lg">Segera hadir.</p>
-          </div>
-        )}
+        ) : null}
       </div>
     </div>
   );

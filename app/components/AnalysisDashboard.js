@@ -297,11 +297,11 @@ export default function AnalysisDashboard() {
   const tableData = data.filter(r => r.Week_Reg === selectedWeek);
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-[#131314]">
+    <div className="flex-1 flex flex-col overflow-hidden bg-gradient-to-b from-slate-950 to-slate-900">
       {/* HEADER & CONTROLS */}
-      <div className="px-4 md:px-8 py-4 md:py-6 bg-white dark:bg-[#131314] border-b border-gray-200 dark:border-[#444746] space-y-4">
+      <div className="px-4 md:px-8 py-4 md:py-6 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 border-b border-slate-800 space-y-4">
         <div className="flex flex-col md:flex-row md:items-center gap-4">
-          <label className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#00A3AD] to-[#008a8f] text-white rounded-lg cursor-pointer hover:shadow-lg transition-shadow">
+          <label className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-lg cursor-pointer hover:shadow-lg hover:shadow-cyan-500/50 transition-shadow">
             <Upload size={18} />
             <span>Upload File</span>
             <input
@@ -317,13 +317,13 @@ export default function AnalysisDashboard() {
           {data.length > 0 && (
             <div className="flex flex-col md:flex-row gap-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-600 dark:text-[#c4c7c5] mb-1">
+                <label className="block text-xs font-semibold text-slate-400 mb-1">
                   Pilih Minggu
                 </label>
                 <select
                   value={selectedWeek || ''}
                   onChange={(e) => setSelectedWeek(e.target.value)}
-                  className="px-3 py-2 bg-gray-100 dark:bg-[#2a2b2c] border border-gray-300 dark:border-[#444746] rounded-lg text-sm text-gray-900 dark:text-[#e3e3e3]"
+                  className="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-slate-100 focus:border-cyan-500 focus:outline-none transition"
                 >
                   {weeks.map(w => (
                     <option key={w} value={w}>{w}</option>
@@ -332,24 +332,24 @@ export default function AnalysisDashboard() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-600 dark:text-[#c4c7c5] mb-1">
+                <label className="block text-xs font-semibold text-slate-400 mb-1">
                   Rentang Tren
                 </label>
                 <div className="flex gap-2">
                   <select
                     value={weekRange[0] || ''}
                     onChange={(e) => setWeekRange([e.target.value, weekRange[1]])}
-                    className="px-2 py-2 bg-gray-100 dark:bg-[#2a2b2c] border border-gray-300 dark:border-[#444746] rounded-lg text-sm text-gray-900 dark:text-[#e3e3e3]"
+                    className="px-2 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-slate-100 focus:border-cyan-500 focus:outline-none transition"
                   >
                     {weeks.map(w => (
                       <option key={w} value={w}>{w}</option>
                     ))}
                   </select>
-                  <span className="text-gray-600 dark:text-[#c4c7c5] font-semibold">-</span>
+                  <span className="text-slate-400 font-semibold">-</span>
                   <select
                     value={weekRange[1] || ''}
                     onChange={(e) => setWeekRange([weekRange[0], e.target.value])}
-                    className="px-2 py-2 bg-gray-100 dark:bg-[#2a2b2c] border border-gray-300 dark:border-[#444746] rounded-lg text-sm text-gray-900 dark:text-[#e3e3e3]"
+                    className="px-2 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-slate-100 focus:border-cyan-500 focus:outline-none transition"
                   >
                     {weeks.map(w => (
                       <option key={w} value={w}>{w}</option>
@@ -362,12 +362,12 @@ export default function AnalysisDashboard() {
         </div>
 
         {isLoading && (
-          <div className="text-sm text-blue-600 dark:text-blue-400">Loading...</div>
+          <div className="text-sm text-cyan-400">Loading...</div>
         )}
 
         {data.length > 0 && (
-          <div className="text-sm text-gray-600 dark:text-[#c4c7c5]">
-            Total Records: <span className="font-bold">{data.length}</span> | Filter: <span className="font-bold">{tableData.length}</span>
+          <div className="text-sm text-slate-400">
+            Total Records: <span className="font-bold text-cyan-400">{data.length}</span> | Filter: <span className="font-bold text-cyan-400">{tableData.length}</span>
           </div>
         )}
       </div>
@@ -375,24 +375,24 @@ export default function AnalysisDashboard() {
       {/* CONTENT */}
       <div className="flex-1 overflow-y-auto">
         {data.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-center p-8 text-gray-500 dark:text-[#8a8c8e]">
+          <div className="flex items-center justify-center h-full text-center p-8 text-slate-500">
             <div className="max-w-md">
               <Upload size={48} className="mx-auto mb-4 opacity-50" />
-              <h3 className="text-lg font-semibold mb-2">Upload File</h3>
-              <p className="text-sm">Upload file Excel (.xlsx) atau CSV dengan kolom: Registration Date, Scheduled Start, Maint. Org., Area</p>
+              <h3 className="text-lg font-semibold mb-2 text-slate-400">Upload File</h3>
+              <p className="text-sm text-slate-500">Upload file Excel (.xlsx) atau CSV dengan kolom: Registration Date, Scheduled Start, Maint. Org., Area</p>
             </div>
           </div>
         ) : (
           <div className="p-4 md:p-8 space-y-8">
             {/* CHART 1: ELIMINATION RATE */}
-            <div id="chart-1" ref={chart1Ref} className="bg-gray-50 dark:bg-[#1e1f20] rounded-lg p-4 md:p-6 border border-gray-200 dark:border-[#444746]">
+            <div id="chart-1" ref={chart1Ref} className="bg-slate-800 rounded-lg p-4 md:p-6 border border-slate-700 shadow-xl">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white">
+                <h3 className="text-lg md:text-xl font-bold text-slate-100">
                   1. Total Elimination Rate Trend (%)
                 </h3>
                 <button
                   onClick={() => downloadChartAsSVG('chart-1', 'elimination-rate-trend')}
-                  className="flex items-center gap-1 px-3 py-1 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition text-sm"
+                  className="flex items-center gap-1 px-3 py-1 bg-gradient-to-r from-cyan-500 to-blue-500 hover:shadow-lg hover:shadow-cyan-500/30 text-white rounded-lg transition text-sm"
                   title="Download chart as PNG"
                 >
                   <Download size={16} /> Download
@@ -400,20 +400,20 @@ export default function AnalysisDashboard() {
               </div>
               <ResponsiveContainer width="100%" height={350}>
                 <LineChart data={chartData.line}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#ccc" />
-                  <XAxis dataKey="week" stroke="#666" />
-                  <YAxis stroke="#666" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
+                  <XAxis dataKey="week" stroke="#94a3b8" />
+                  <YAxis stroke="#94a3b8" />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: '#1e1f20',
-                      border: '1px solid #444746',
-                      color: '#e3e3e3'
+                      backgroundColor: '#1e293b',
+                      border: '1px solid #475569',
+                      color: '#e2e8f0'
                     }}
                     formatter={(value) => value + '%'}
                   />
                   <Legend />
-                  <ReferenceLine y={100} stroke="red" strokeDasharray="5 5" label="Target 100%" />
-                  <Line type="monotone" dataKey="rate" stroke="#3b82f6" name="Rate (%)" dot={{ fill: '#3b82f6' }} />
+                  <ReferenceLine y={100} stroke="#ef4444" strokeDasharray="5 5" label="Target 100%" />
+                  <Line type="monotone" dataKey="rate" stroke="#06b6d4" name="Rate (%)" dot={{ fill: '#06b6d4' }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -421,14 +421,14 @@ export default function AnalysisDashboard() {
             {/* CHARTS 2 & 3: BAR CHARTS */}
             <div className="grid md:grid-cols-2 gap-6">
               {/* Chart 2: Division */}
-              <div id="chart-2" ref={chart2Ref} className="bg-gray-50 dark:bg-[#1e1f20] rounded-lg p-4 md:p-6 border border-gray-200 dark:border-[#444746]">
+              <div id="chart-2" ref={chart2Ref} className="bg-slate-800 rounded-lg p-4 md:p-6 border border-slate-700 shadow-xl">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                  <h3 className="text-lg font-bold text-slate-100">
                     2. WO Distribution by Division ({selectedWeek})
                   </h3>
                   <button
                     onClick={() => downloadChartAsSVG('chart-2', 'wo-distribution-division')}
-                    className="flex items-center gap-1 px-3 py-1 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition text-sm"
+                    className="flex items-center gap-1 px-3 py-1 bg-gradient-to-r from-cyan-500 to-blue-500 hover:shadow-lg hover:shadow-cyan-500/30 text-white rounded-lg transition text-sm"
                     title="Download chart as PNG"
                   >
                     <Download size={16} /> Download
@@ -436,18 +436,18 @@ export default function AnalysisDashboard() {
                 </div>
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={chartData.divisionData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#ccc" />
-                    <XAxis dataKey="name" stroke="#666" />
-                    <YAxis stroke="#666" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
+                    <XAxis dataKey="name" stroke="#94a3b8" />
+                    <YAxis stroke="#94a3b8" />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: '#1e1f20',
-                        border: '1px solid #444746',
-                        color: '#e3e3e3'
+                        backgroundColor: '#1e293b',
+                        border: '1px solid #475569',
+                        color: '#e2e8f0'
                       }}
                     />
                     <Legend />
-                    <Bar dataKey="Registered" fill="#3b82f6" />
+                    <Bar dataKey="Registered" fill="#06b6d4" />
                     <Bar dataKey="Scheduled" fill="#10b981" />
                     <Bar dataKey="Reg=Sched" fill="#f59e0b" />
                   </BarChart>
@@ -455,14 +455,14 @@ export default function AnalysisDashboard() {
               </div>
 
               {/* Chart 3: Area */}
-              <div id="chart-3" ref={chart3Ref} className="bg-gray-50 dark:bg-[#1e1f20] rounded-lg p-4 md:p-6 border border-gray-200 dark:border-[#444746]">
+              <div id="chart-3" ref={chart3Ref} className="bg-slate-800 rounded-lg p-4 md:p-6 border border-slate-700 shadow-xl">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                  <h3 className="text-lg font-bold text-slate-100">
                     3. WO Distribution by Area ({selectedWeek})
                   </h3>
                   <button
                     onClick={() => downloadChartAsSVG('chart-3', 'wo-distribution-area')}
-                    className="flex items-center gap-1 px-3 py-1 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition text-sm"
+                    className="flex items-center gap-1 px-3 py-1 bg-gradient-to-r from-cyan-500 to-blue-500 hover:shadow-lg hover:shadow-cyan-500/30 text-white rounded-lg transition text-sm"
                     title="Download chart as PNG"
                   >
                     <Download size={16} /> Download
@@ -470,18 +470,18 @@ export default function AnalysisDashboard() {
                 </div>
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={chartData.areaData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#ccc" />
-                    <XAxis dataKey="name" stroke="#666" />
-                    <YAxis stroke="#666" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
+                    <XAxis dataKey="name" stroke="#94a3b8" />
+                    <YAxis stroke="#94a3b8" />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: '#1e1f20',
-                        border: '1px solid #444746',
-                        color: '#e3e3e3'
+                        backgroundColor: '#1e293b',
+                        border: '1px solid #475569',
+                        color: '#e2e8f0'
                       }}
                     />
                     <Legend />
-                    <Bar dataKey="Registered" fill="#3b82f6" />
+                    <Bar dataKey="Registered" fill="#06b6d4" />
                     <Bar dataKey="Scheduled" fill="#10b981" />
                     <Bar dataKey="Reg=Sched" fill="#f59e0b" />
                   </BarChart>
@@ -490,10 +490,10 @@ export default function AnalysisDashboard() {
             </div>
 
             {/* DATA TABLE */}
-            <div className="bg-gray-50 dark:bg-[#1e1f20] rounded-lg p-4 md:p-6 border border-gray-200 dark:border-[#444746]">
+            <div className="bg-slate-800 rounded-lg p-4 md:p-6 border border-slate-700 shadow-xl">
               <button
                 onClick={() => setShowDataTable(!showDataTable)}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition mb-4"
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-lg hover:shadow-lg hover:shadow-cyan-500/30 transition mb-4"
               >
                 {showDataTable ? <EyeOff size={18} /> : <Eye size={18} />}
                 {showDataTable ? 'Sembunyikan' : 'Tampilkan'} Tabel Detail
@@ -502,11 +502,11 @@ export default function AnalysisDashboard() {
               {showDataTable && tableData.length > 0 && (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm border-collapse">
-                    <thead className="bg-gray-200 dark:bg-[#2a2b2c] border-b border-gray-300 dark:border-[#444746] sticky top-0">
+                    <thead className="bg-slate-700 border-b border-slate-600 sticky top-0">
                       <tr>
                         {Object.keys(tableData[0]).map((key) => (
                           key !== 'Week_Reg' && key !== 'Week_Sched' && (
-                            <th key={key} className="px-3 py-2 text-left font-semibold text-gray-900 dark:text-[#e3e3e3] whitespace-nowrap border-r border-gray-300 dark:border-[#444746]">
+                            <th key={key} className="px-3 py-2 text-left font-semibold text-cyan-300 whitespace-nowrap border-r border-slate-600">
                               {key.replace(/_/g, ' ')}
                             </th>
                           )
@@ -515,10 +515,10 @@ export default function AnalysisDashboard() {
                     </thead>
                     <tbody>
                       {tableData.slice(0, 100).map((row, idx) => (
-                        <tr key={idx} className="border-b border-gray-200 dark:border-[#444746] hover:bg-gray-100 dark:hover:bg-[#2a2b2c] transition">
+                        <tr key={idx} className="border-b border-slate-700 hover:bg-slate-700 transition">
                           {Object.entries(row).map(([key, value]) => (
                             key !== 'Week_Reg' && key !== 'Week_Sched' && (
-                              <td key={key} className="px-3 py-2 text-gray-900 dark:text-[#e3e3e3] border-r border-gray-200 dark:border-[#444746]">
+                              <td key={key} className="px-3 py-2 text-slate-200 border-r border-slate-700">
                                 {key === 'Registration_Date' || key === 'Scheduled_Start'
                                   ? formatDate(value)
                                   : typeof value === 'object'
@@ -532,7 +532,7 @@ export default function AnalysisDashboard() {
                     </tbody>
                   </table>
                   {tableData.length > 100 && (
-                    <div className="mt-2 text-sm text-gray-600 dark:text-[#c4c7c5]">
+                    <div className="mt-2 text-sm text-slate-400">
                       ... dan {tableData.length - 100} baris lainnya
                     </div>
                   )}

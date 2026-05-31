@@ -12,7 +12,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "AIRIS.EVO - Intelligent Analysis & Reporting System",
+  title: "Airis-Evo (Artificial Intelligent for Indonesia Power Services)",
   description: "Platform AI terpadu untuk chat, analisis data, dan insights mendalam dengan teknologi machine learning terkini",
 };
 

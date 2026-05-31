@@ -1,6 +1,6 @@
 "use client";
 import { useState, useRef, useEffect } from 'react';
-import { Infinity, Menu, X, MessageSquare, Send, Trash2, ChevronLeft, ChevronRight, Copy, Check, BarChart3 } from 'lucide-react';
+import { Infinity, Menu, X, MessageSquare, Send, Trash2, ChevronLeft, ChevronRight, Copy, Check, BarChart3, Moon, Sun } from 'lucide-react';
 import AnalysisDashboard from './components/AnalysisDashboard';
 
 export default function AirisGemini() {
@@ -11,13 +11,18 @@ export default function AirisGemini() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState(null);
+  const [isDarkMode, setIsDarkMode] = useState(true);
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
 
   // Enable dark mode on mount
   useEffect(() => {
-    document.documentElement.classList.add('dark');
-  }, []);
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDarkMode]);
 
   // Copy to clipboard function
   const copyToClipboard = (text, index) => {
@@ -194,7 +199,13 @@ export default function AirisGemini() {
             Airis-Evo
           </h1>
           
-          <div></div>
+          <button
+            onClick={() => setIsDarkMode(!isDarkMode)}
+            className="p-2 hover:bg-slate-800 dark:hover:bg-slate-800 rounded-lg transition text-slate-400 hover:text-slate-200"
+            title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+          >
+            {isDarkMode ? <Sun size={24} /> : <Moon size={24} />}
+          </button>
         </div>
 
         {/* CHAT CONTAINER */}

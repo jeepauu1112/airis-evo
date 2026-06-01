@@ -20,6 +20,12 @@ export default function LoginPage() {
     document.documentElement.classList.add('dark')
   }, [])
 
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.replace('/')
+    }
+  }, [authLoading, router, user])
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     
@@ -40,12 +46,10 @@ export default function LoginPage() {
         setEmail('')
         setPassword('')
         
-        // Wait longer for Supabase session to fully initialize
-        // Then redirect to main page
         setTimeout(() => {
           console.log('Executing redirect to /')
-          router.push('/')
-        }, 1500)
+          router.replace('/')
+        }, 300)
       } else {
         setError(result.error || 'Login failed')
         setLoading(false)

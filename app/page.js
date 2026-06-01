@@ -6,6 +6,9 @@ import { useAuth } from '@/lib/useAuth';
 import AnalysisDashboard from './components/AnalysisDashboard';
 
 const CHAT_SESSION_STORAGE_PREFIX = 'airis-evo-chat-session';
+const CHAT_RESPONSE_CACHE_PREFIX = 'airis-evo-chat-response-cache';
+const EMPTY_RESPONSE_MESSAGE = "Maaf, ada kesalahan pada respons.";
+const CONNECTION_ERROR_MESSAGE = "Koneksi terputus atau ada kesalahan. Silakan coba lagi.";
 
 function createChatSessionId(userId) {
   const randomId = typeof crypto !== 'undefined' && crypto.randomUUID
@@ -26,6 +29,53 @@ function getOrCreateChatSessionId(userId) {
   const newSessionId = createChatSessionId(userId);
   sessionStorage.setItem(storageKey, newSessionId);
   return newSessionId;
+}
+
+function normalizeQuestion(question) {
+  return question.trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+function getChatResponseCacheKey(sessionId) {
+  return `${CHAT_RESPONSE_CACHE_PREFIX}:${sessionId}`;
+}
+
+function getCachedChatResponse(sessionId, question) {
+  try {
+    const cacheKey = getChatResponseCacheKey(sessionId);
+    const cache = JSON.parse(sessionStorage.getItem(cacheKey) || '{}');
+    const normalizedQuestion = normalizeQuestion(question);
+    const cachedResponse = cache[normalizedQuestion];
+
+    if (!cachedResponse || cachedResponse === EMPTY_RESPONSE_MESSAGE || cachedResponse.includes('Koneksi terputus')) {
+      if (cachedResponse) {
+        delete cache[normalizedQuestion];
+        sessionStorage.setItem(cacheKey, JSON.stringify(cache));
+      }
+
+      return null;
+    }
+
+    return cachedResponse;
+  } catch (err) {
+    console.warn('Unable to read chat response cache:', err);
+    return null;
+  }
+}
+
+function setCachedChatResponse(sessionId, question, answer) {
+  try {
+    if (!answer || answer === EMPTY_RESPONSE_MESSAGE || answer.includes('Koneksi terputus')) {
+      return;
+    }
+
+    const cacheKey = getChatResponseCacheKey(sessionId);
+    const cache = JSON.parse(sessionStorage.getItem(cacheKey) || '{}');
+
+    cache[normalizeQuestion(question)] = answer;
+    sessionStorage.setItem(cacheKey, JSON.stringify(cache));
+  } catch (err) {
+    console.warn('Unable to save chat response cache:', err);
+  }
 }
 
 export default function AirisGemini() {
@@ -117,8 +167,16 @@ export default function AirisGemini() {
     setInput("");
     const newMsg = { role: "user", content: userMessage };
     setMessages(prev => [...prev, newMsg]);
-    setIsLoading(true);
     setSidebarOpen(false); // Close sidebar on mobile when sending
+
+    const cachedResponse = getCachedChatResponse(currentSessionId, userMessage);
+
+    if (cachedResponse) {
+      setMessages(prev => [...prev, { role: "assistant", content: cachedResponse }]);
+      return;
+    }
+
+    setIsLoading(true);
 
     try {
       const res = await fetch("/api/chat", {
@@ -135,12 +193,18 @@ export default function AirisGemini() {
         }),
       });
       
-      if (!res.ok) throw new Error('API error');
-      
       const data = await res.json();
-      setMessages(prev => [...prev, { role: "assistant", content: data.output || "Maaf, ada kesalahan pada respons." }]);
+
+      if (!res.ok) {
+        throw new Error(data.error || 'API error');
+      }
+
+      const assistantResponse = data.output || data.error || EMPTY_RESPONSE_MESSAGE;
+
+      setCachedChatResponse(currentSessionId, userMessage, assistantResponse);
+      setMessages(prev => [...prev, { role: "assistant", content: assistantResponse }]);
     } catch (error) {
-      setMessages(prev => [...prev, { role: "assistant", content: "⚠️ Koneksi terputus atau ada kesalahan. Silakan coba lagi." }]);
+      setMessages(prev => [...prev, { role: "assistant", content: error.message || CONNECTION_ERROR_MESSAGE }]);
     } finally {
       setIsLoading(false);
     }

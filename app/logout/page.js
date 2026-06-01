@@ -12,17 +12,11 @@ export default function LogoutPage() {
   useEffect(() => {
     const performLogout = async () => {
       try {
-        const result = await logout()
-        if (result.success) {
-          // Wait a moment then redirect to login
-          setTimeout(() => {
-            router.push('/login')
-          }, 500)
-        }
+        await logout()
       } catch (err) {
         console.error('Logout error:', err)
-        // Still redirect to login even if there's an error
-        router.push('/login')
+      } finally {
+        router.replace('/login')
       }
     }
 

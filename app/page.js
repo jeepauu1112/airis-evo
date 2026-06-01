@@ -99,10 +99,7 @@ export default function AirisGemini() {
         sessionStorage.removeItem(`${CHAT_SESSION_STORAGE_PREFIX}:${currentUserId}`);
       }
 
-      // Always redirect to login after logout attempt
-      setTimeout(() => {
-        window.location.href = '/login';
-      }, 300);
+      router.replace('/login');
     }
   };
 

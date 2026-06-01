@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { useAuth } from '@/lib/useAuth'
 import { Eye, EyeOff, Lock, Mail, Loader2, CheckCircle, AlertCircle, Infinity } from 'lucide-react'
 
@@ -89,6 +90,24 @@ export default function LoginPage() {
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
         <div className="absolute top-1/2 left-1/2 w-80 h-80 bg-cyan-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
+      </div>
+
+      <Image
+        src="https://res.cloudinary.com/cdb-klb1/image/upload/v1780321996/PLN_IPS_Logo_vmda13.png"
+        alt="PLN IPS"
+        width={190}
+        height={56}
+        className="absolute left-5 top-5 z-20 h-11 w-auto sm:left-8 sm:top-8 sm:h-14 drop-shadow-2xl"
+        priority
+      />
+
+      <div className="absolute right-5 top-6 z-20 text-right sm:right-8 sm:top-9">
+        <p
+          className="text-sm font-bold uppercase text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-blue-300 to-cyan-200 sm:text-xl"
+          style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}
+        >
+          IPP KALBAR-1 2X100 MW
+        </p>
       </div>
 
       {/* Login container */}

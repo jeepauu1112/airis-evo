@@ -1,9 +1,14 @@
 "use client";
 import { useState, useRef, useEffect } from 'react';
-import { Infinity, Menu, X, MessageSquare, Send, Trash2, ChevronLeft, ChevronRight, Copy, Check, BarChart3, Moon, Sun } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Infinity, Menu, X, MessageSquare, Send, Trash2, ChevronLeft, ChevronRight, Copy, Check, BarChart3, Moon, Sun, LogOut, User } from 'lucide-react';
+import { useAuth } from '@/lib/useAuth';
 import AnalysisDashboard from './components/AnalysisDashboard';
 
 export default function AirisGemini() {
+  const router = useRouter();
+  const { user, profile, logout, loading: authLoading } = useAuth();
+  
   const [activeTab, setActiveTab] = useState("chat");
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
@@ -41,6 +46,27 @@ export default function AirisGemini() {
     }, 100);
   }, [messages, isLoading]);
 
+  // Redirect to login if not authenticated (after auth check completes)
+  useEffect(() => {
+    if (!authLoading && !user) {
+      window.location.href = '/login';
+    }
+  }, [authLoading, user]);
+
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (err) {
+      console.error('Logout error:', err);
+    } finally {
+      // Always redirect to login after logout attempt
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 300);
+    }
+  };
+
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
     
@@ -54,7 +80,15 @@ export default function AirisGemini() {
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
-        body: JSON.stringify({ message: userMessage }),
+        body: JSON.stringify({ 
+          message: userMessage,
+          user: {
+            id: user?.id,
+            email: user?.email,
+            full_name: profile?.full_name,
+            role: profile?.role
+          }
+        }),
       });
       
       if (!res.ok) throw new Error('API error');
@@ -103,6 +137,18 @@ export default function AirisGemini() {
     });
   };
 
+  // Show loading while auth is being verified
+  if (authLoading) {
+    return (
+      <div className="flex h-screen bg-slate-950 text-slate-100 items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+          <p className="text-gray-400">Verifying authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen bg-slate-950 dark:bg-slate-950 text-slate-100 dark:text-slate-100">
       
@@ -144,6 +190,24 @@ export default function AirisGemini() {
           {!sidebarCollapsed && <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400">Kalbar-1</span>}
         </div>
 
+        {/* USER PROFILE CARD */}
+        {user && !sidebarCollapsed && (
+          <div className="bg-slate-700/30 border border-slate-600/30 rounded-lg p-3 mb-4">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center flex-shrink-0">
+                <User size={16} className="text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-slate-100 truncate">{profile?.full_name || user.email}</p>
+                <p className="text-xs text-slate-400 truncate">{user.email}</p>
+              </div>
+            </div>
+            {profile?.role && (
+              <p className="text-xs text-slate-300 bg-slate-600/50 px-2 py-1 rounded w-fit">{profile.role}</p>
+            )}
+          </div>
+        )}
+
         {/* NAV BUTTONS */}
         <button 
           onClick={() => { setActiveTab("chat"); setSidebarOpen(false); }} 
@@ -175,6 +239,16 @@ export default function AirisGemini() {
         >
           <Trash2 size={20} /> 
           {!sidebarCollapsed && <span className="font-medium">Clear Chat</span>}
+        </button>
+
+        {/* LOGOUT BUTTON */}
+        <button 
+          onClick={handleLogout}
+          className={`flex items-center gap-3 px-4 py-3 text-amber-400 hover:text-amber-300 hover:bg-amber-900/20 rounded-xl transition-all duration-200 ${sidebarCollapsed ? 'lg:justify-center' : ''}`}
+          title={sidebarCollapsed ? 'Logout' : ''}
+        >
+          <LogOut size={20} /> 
+          {!sidebarCollapsed && <span className="font-medium">Logout</span>}
         </button>
 
         {/* FOOTER TEXT */}
@@ -351,6 +425,73 @@ export default function AirisGemini() {
           <AnalysisDashboard />
         ) : null}
       </div>
+
+      <style jsx>{`
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes slideInRight {
+          from {
+            opacity: 0;
+            transform: translateX(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+
+        @keyframes glow {
+          0%, 100% {
+            box-shadow: 0 0 20px rgba(34, 211, 238, 0.4);
+          }
+          50% {
+            box-shadow: 0 0 30px rgba(34, 211, 238, 0.6);
+          }
+        }
+
+        .animate-fadeInUp {
+          animation: fadeInUp 0.5s ease-out;
+        }
+
+        .animate-slideInRight {
+          animation: slideInRight 0.5s ease-out;
+        }
+
+        .animate-glow {
+          animation: glow 2s ease-in-out infinite;
+        }
+
+        .typing-dots {
+          display: flex;
+          gap: 4px;
+        }
+
+        .typing-dots .dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background-color: currentColor;
+          animation: typing 1.4s infinite;
+        }
+
+        @keyframes typing {
+          0%, 60%, 100% {
+            opacity: 0.3;
+          }
+          30% {
+            opacity: 1;
+          }
+        }
+      `}</style>
     </div>
   );
 }

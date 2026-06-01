@@ -5,6 +5,29 @@ import { Infinity, Menu, X, MessageSquare, Send, Trash2, ChevronLeft, ChevronRig
 import { useAuth } from '@/lib/useAuth';
 import AnalysisDashboard from './components/AnalysisDashboard';
 
+const CHAT_SESSION_STORAGE_PREFIX = 'airis-evo-chat-session';
+
+function createChatSessionId(userId) {
+  const randomId = typeof crypto !== 'undefined' && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+  return `${userId}:${randomId}`;
+}
+
+function getOrCreateChatSessionId(userId) {
+  const storageKey = `${CHAT_SESSION_STORAGE_PREFIX}:${userId}`;
+  const existingSessionId = sessionStorage.getItem(storageKey);
+
+  if (existingSessionId) {
+    return existingSessionId;
+  }
+
+  const newSessionId = createChatSessionId(userId);
+  sessionStorage.setItem(storageKey, newSessionId);
+  return newSessionId;
+}
+
 export default function AirisGemini() {
   const router = useRouter();
   const { user, profile, logout, loading: authLoading } = useAuth();
@@ -17,6 +40,7 @@ export default function AirisGemini() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState(null);
   const [isDarkMode, setIsDarkMode] = useState(true);
+  const [chatSessionId, setChatSessionId] = useState('');
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -53,13 +77,28 @@ export default function AirisGemini() {
     }
   }, [authLoading, user]);
 
+  useEffect(() => {
+    if (!user?.id) {
+      setChatSessionId('');
+      return;
+    }
+
+    setChatSessionId(getOrCreateChatSessionId(user.id));
+  }, [user?.id]);
+
   // Handle logout
   const handleLogout = async () => {
+    const currentUserId = user?.id;
+
     try {
       await logout();
     } catch (err) {
       console.error('Logout error:', err);
     } finally {
+      if (currentUserId) {
+        sessionStorage.removeItem(`${CHAT_SESSION_STORAGE_PREFIX}:${currentUserId}`);
+      }
+
       // Always redirect to login after logout attempt
       setTimeout(() => {
         window.location.href = '/login';
@@ -69,8 +108,15 @@ export default function AirisGemini() {
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
+    if (!user?.id) return;
     
     const userMessage = input;
+    const currentSessionId = chatSessionId || getOrCreateChatSessionId(user.id);
+
+    if (!chatSessionId) {
+      setChatSessionId(currentSessionId);
+    }
+
     setInput("");
     const newMsg = { role: "user", content: userMessage };
     setMessages(prev => [...prev, newMsg]);
@@ -82,6 +128,7 @@ export default function AirisGemini() {
         method: "POST",
         body: JSON.stringify({ 
           message: userMessage,
+          sessionId: currentSessionId,
           user: {
             id: user?.id,
             email: user?.email,
@@ -233,7 +280,16 @@ export default function AirisGemini() {
 
         {/* CLEAR CHAT BUTTON */}
         <button 
-          onClick={() => { setMessages([]); setSidebarOpen(false); }} 
+          onClick={() => {
+            setMessages([]);
+            setSidebarOpen(false);
+
+            if (user?.id) {
+              const newSessionId = createChatSessionId(user.id);
+              sessionStorage.setItem(`${CHAT_SESSION_STORAGE_PREFIX}:${user.id}`, newSessionId);
+              setChatSessionId(newSessionId);
+            }
+          }} 
           className={`mt-auto flex items-center gap-3 px-4 py-3 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded-xl transition-all duration-200 ${sidebarCollapsed ? 'lg:justify-center' : ''}`}
           title={sidebarCollapsed ? 'Clear Chat' : ''}
         >

@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Infinity, Menu, X, MessageSquare, Send, Copy, Check, BarChart3, Moon, Sun, LogOut, User, PanelLeftClose, Trash2 } from 'lucide-react';
+import { Infinity, Menu, X, MessageSquare, Send, Copy, Check, BarChart3, Moon, Sun, LogOut, User, PanelLeftClose, Trash2, Mic, MicOff } from 'lucide-react';
 import { useAuth } from '@/lib/useAuth';
 import AnalysisDashboard from './components/AnalysisDashboard';
 
@@ -90,6 +90,9 @@ export default function AirisGemini() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState(null);
+  const [isListening, setIsListening] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(false);
+  const [voiceError, setVoiceError] = useState('');
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window === 'undefined') return true;
 
@@ -98,6 +101,7 @@ export default function AirisGemini() {
   const [chatSessionId, setChatSessionId] = useState('');
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
+  const recognitionRef = useRef(null);
 
   // Enable dark mode on mount
   useEffect(() => {
@@ -110,12 +114,79 @@ export default function AirisGemini() {
     }
   }, [isDarkMode]);
 
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      setSpeechSupported(false);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'id-ID';
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      setVoiceError('');
+      setIsListening(true);
+    };
+
+    recognition.onresult = (event) => {
+      const transcript = Array.from(event.results)
+        .map((result) => result[0]?.transcript || '')
+        .join(' ')
+        .trim();
+
+      if (transcript) {
+        setInput(transcript);
+      }
+    };
+
+    recognition.onerror = (event) => {
+      setIsListening(false);
+      setVoiceError(event.error === 'not-allowed'
+        ? 'Izin mikrofon ditolak. Buka izin situs di address bar, lalu pilih Allow microphone.'
+        : 'Gagal membaca suara.'
+      );
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognitionRef.current = recognition;
+    setSpeechSupported(true);
+
+    return () => {
+      recognition.stop();
+      recognitionRef.current = null;
+    };
+  }, []);
+
   // Copy to clipboard function
-  const copyToClipboard = (text, index) => {
-    navigator.clipboard.writeText(text).then(() => {
+  const copyToClipboard = async (text, index) => {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.setAttribute('readonly', '');
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+
       setCopiedIndex(index);
       setTimeout(() => setCopiedIndex(null), 2000);
-    });
+    } catch (err) {
+      console.error('Unable to copy text:', err);
+    }
   };
 
   // Auto scroll to newest message
@@ -217,39 +288,229 @@ export default function AirisGemini() {
     }
   };
 
-  const renderContent = (content) => {
-    const lines = content.split('\n');
-    return lines.map((line, i) => {
-      // Handle markdown table rows
-      if (line.trim().startsWith('|')) {
-        const cells = line.split('|').filter(c => c.trim() !== "");
-        if (line.includes('---')) return null;
-        return (
-          <div key={i} className="grid grid-cols-2 gap-4 border-b border-slate-700 py-3 hover:bg-slate-700/30 px-3 transition text-sm md:text-base">
-            {cells.map((cell, j) => (
-              <span key={j} className={j === 0 ? "font-semibold text-slate-100" : "text-slate-300"}>
-                {cell.replace(/\*\*/g, '').trim()}
-              </span>
-            ))}
-          </div>
-        );
-      }
+  const handleVoiceInput = () => {
+    const recognition = recognitionRef.current;
 
-      // Handle bold text
-      const parts = line.split(/(\*\*.*?\*\*)/g);
-      const formattedLine = parts.map((part, index) => {
+    if (!recognition) {
+      setVoiceError('Perintah suara belum didukung di browser ini.');
+      return;
+    }
+
+    if (isListening) {
+      recognition.stop();
+      return;
+    }
+
+    try {
+      setVoiceError('');
+      recognition.start();
+    } catch (err) {
+      console.error('Unable to start speech recognition:', err);
+      setVoiceError('Mikrofon belum siap. Coba lagi.');
+    }
+  };
+
+  const renderInlineMarkdown = (text) => {
+    const parts = text.split(/(\*\*.*?\*\*)/g);
+
+    return parts.map((part, index) => {
         if (part.startsWith('**') && part.endsWith('**')) {
-          return <strong key={index} className="font-bold text-slate-100">{part.replace(/\*\*/g, '')}</strong>;
+          return (
+            <strong key={index} className={`font-bold ${isDarkMode ? 'text-slate-100' : 'text-slate-950'}`}>
+              {part.replace(/\*\*/g, '')}
+            </strong>
+          );
         }
         return part;
       });
+  };
 
-      return (
-        <p key={i} className="mb-4 leading-relaxed text-base md:text-lg text-slate-200 font-normal">
-          {formattedLine}
+  const cleanMarkdownCell = (cell) => cell.replace(/\*\*/g, '').trim();
+
+  const renderCopyBlock = (text, key) => (
+    <div
+      key={key}
+      className={`relative my-5 overflow-hidden rounded-2xl border p-5 pr-14 shadow-lg ${
+        isDarkMode
+          ? 'border-slate-700/60 bg-black/35 text-slate-100 shadow-black/20'
+          : 'border-slate-200 bg-white/80 text-slate-900 shadow-slate-200/60'
+      }`}
+    >
+      <button
+        onClick={() => copyToClipboard(text, key)}
+        className={`absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-lg transition ${iconButtonClass}`}
+        title="Copy"
+      >
+        {copiedIndex === key ? <Check size={18} /> : <Copy size={18} />}
+      </button>
+      <pre className={`whitespace-pre-wrap break-words font-mono text-sm font-semibold leading-relaxed ${
+        isDarkMode ? 'text-slate-100' : 'text-slate-800'
+      }`}>
+        {text}
+      </pre>
+    </div>
+  );
+
+  const renderContent = (content, copyPrefix = 'content') => {
+    const lines = content.split('\n');
+    const rendered = [];
+
+    for (let i = 0; i < lines.length; i += 1) {
+      const line = lines[i];
+      const trimmedLine = line.trim();
+
+      if (trimmedLine.startsWith('```')) {
+        const codeLines = [];
+        i += 1;
+
+        while (i < lines.length && !lines[i].trim().startsWith('```')) {
+          codeLines.push(lines[i]);
+          i += 1;
+        }
+
+        rendered.push(renderCopyBlock(codeLines.join('\n').trim(), `${copyPrefix}-code-${i}`));
+        continue;
+      }
+
+      if (!trimmedLine) {
+        rendered.push(<div key={`space-${i}`} className="h-1" />);
+        continue;
+      }
+
+      if (trimmedLine.startsWith('|')) {
+        const tableLines = [];
+
+        while (i < lines.length && lines[i].trim().startsWith('|')) {
+          if (!lines[i].includes('---')) {
+            tableLines.push(lines[i]);
+          }
+          i += 1;
+        }
+
+        i -= 1;
+
+        const rows = tableLines.map((tableLine) =>
+          tableLine.split('|').filter((cell) => cell.trim() !== '').map(cleanMarkdownCell)
+        );
+        const [headerRow, ...bodyRows] = rows;
+
+        if (headerRow) {
+          rendered.push(
+            <div
+              key={`table-${i}`}
+              className={`my-4 overflow-hidden rounded-2xl border ${
+                isDarkMode ? 'border-slate-700/70 bg-slate-900/50' : 'border-slate-200 bg-white/70'
+              }`}
+            >
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[520px] border-collapse text-left text-sm md:text-base">
+                  <thead className={isDarkMode ? 'bg-slate-800/80' : 'bg-slate-100/90'}>
+                    <tr>
+                      {headerRow.map((cell, cellIndex) => (
+                        <th
+                          key={cellIndex}
+                          className={`px-4 py-3 font-bold ${
+                            isDarkMode ? 'text-slate-100' : 'text-slate-950'
+                          }`}
+                        >
+                          {cell}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bodyRows.map((row, rowIndex) => (
+                      <tr
+                        key={rowIndex}
+                        className={`border-t ${
+                          isDarkMode ? 'border-slate-700/70' : 'border-slate-200'
+                        }`}
+                      >
+                        {row.map((cell, cellIndex) => (
+                          <td
+                            key={cellIndex}
+                            className={`px-4 py-3 align-top ${
+                              cellIndex === 0
+                                ? `font-semibold ${isDarkMode ? 'text-slate-100' : 'text-slate-900'}`
+                                : `${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`
+                            }`}
+                          >
+                            {cell}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          );
+        }
+
+        continue;
+      }
+
+      if (/^#{1,6}\s+/.test(trimmedLine)) {
+        rendered.push(
+          <h3
+            key={i}
+            className={`mb-3 mt-5 text-xl font-bold leading-tight md:text-2xl ${
+              isDarkMode ? 'text-slate-100' : 'text-slate-950'
+            }`}
+          >
+            {renderInlineMarkdown(trimmedLine.replace(/^#{1,6}\s+/, ''))}
+          </h3>
+        );
+        continue;
+      }
+
+      if (/^[-*]\s+/.test(trimmedLine)) {
+        rendered.push(
+          <div key={i} className={`mb-2 flex gap-3 text-base leading-relaxed md:text-lg ${
+            isDarkMode ? 'text-slate-200' : 'text-slate-700'
+          }`}>
+            <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-cyan-400" />
+            <p>{renderInlineMarkdown(trimmedLine.replace(/^[-*]\s+/, ''))}</p>
+          </div>
+        );
+        continue;
+      }
+
+      if (/^\d+\.\s+/.test(trimmedLine)) {
+        const itemNumber = trimmedLine.match(/^(\d+)\./)?.[1];
+
+        rendered.push(
+          <div key={i} className={`mb-2 flex gap-3 text-base leading-relaxed md:text-lg ${
+            isDarkMode ? 'text-slate-200' : 'text-slate-700'
+          }`}>
+            <span className="min-w-6 flex-shrink-0 font-semibold text-cyan-400">{itemNumber}.</span>
+            <p>{renderInlineMarkdown(trimmedLine.replace(/^\d+\.\s+/, ''))}</p>
+          </div>
+        );
+        continue;
+      }
+
+      rendered.push(
+        <p
+          key={i}
+          className={`mb-4 text-base font-normal leading-relaxed md:text-lg ${
+            isDarkMode ? 'text-slate-200' : 'text-slate-700'
+          }`}
+        >
+          {renderInlineMarkdown(trimmedLine)}
         </p>
       );
-    });
+    }
+
+    return rendered;
+  };
+
+  const renderAssistantMessage = (content, index) => {
+    return (
+      <div className="w-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+        {renderContent(content, `assistant-${index}`)}
+      </div>
+    );
   };
 
   // Show loading while auth is being verified
@@ -534,22 +795,7 @@ export default function AirisGemini() {
                       ? userBubbleClass 
                       : `max-w-none flex-1 ${isDarkMode ? 'text-slate-100' : 'text-slate-900'}`
                   }`}>
-                    <div>
-                      {renderContent(m.content)}
-                    </div>
-                    {m.role === 'assistant' && (
-                      <button
-                        onClick={() => copyToClipboard(m.content, i)}
-                        className={`mt-2 flex items-center gap-1 rounded px-2 py-1 text-xs transition ${iconButtonClass}`}
-                        title="Copy response"
-                      >
-                        {copiedIndex === i ? (
-                          <><Check size={14} /> Copied!</>
-                        ) : (
-                          <><Copy size={14} /> Copy</>
-                        )}
-                      </button>
-                    )}
+                    {m.role === 'assistant' ? renderAssistantMessage(m.content, i) : renderContent(m.content)}
                   </div>
                 </div>
               ))}
@@ -580,7 +826,7 @@ export default function AirisGemini() {
                     <input 
                       ref={inputRef}
                       className={`flex-1 bg-transparent text-sm outline-none placeholder-slate-500 md:text-base ${isDarkMode ? 'text-slate-100' : 'text-slate-950'}`}
-                      placeholder="Tanya apa saja..." 
+                      placeholder={isListening ? 'Mendengarkan...' : 'Tanya apa saja...'} 
                       value={input} 
                       onChange={(e) => setInput(e.target.value)} 
                       onKeyDown={(e) => {
@@ -591,6 +837,21 @@ export default function AirisGemini() {
                       }}
                       disabled={isLoading}
                     />
+                    <button
+                      type="button"
+                      onClick={handleVoiceInput}
+                      disabled={isLoading || !speechSupported}
+                      className={`flex h-9 w-9 items-center justify-center rounded-full transition ${
+                        isListening
+                          ? 'bg-red-500 text-white shadow-lg shadow-red-500/30'
+                          : speechSupported && !isLoading
+                            ? iconButtonClass
+                            : disabledSendClass
+                      }`}
+                      title={speechSupported ? (isListening ? 'Berhenti mendengarkan' : 'Gunakan suara') : 'Browser tidak mendukung perintah suara'}
+                    >
+                      {isListening ? <MicOff size={18} /> : <Mic size={18} />}
+                    </button>
                     <button 
                       onClick={handleSend} 
                       disabled={!input.trim() || isLoading}
@@ -604,11 +865,16 @@ export default function AirisGemini() {
                     </button>
                   </div>
                 </div>
+                {voiceError && (
+                  <p className="mx-auto max-w-4xl px-4 text-xs text-red-400">
+                    {voiceError}
+                  </p>
+                )}
 
                 {/* DISCLAIMER */}
                 <div className="text-center">
                   <p className={`text-xs ${isDarkMode ? 'text-slate-500' : 'text-slate-500'}`}>
-                    A.I.R.I.S dapat melakukan kesalahan. Periksa informasi penting.
+                    AIRIS-EVO dapat melakukan kesalahan. Periksa informasi penting.
                   </p>
                 </div>
               </div>

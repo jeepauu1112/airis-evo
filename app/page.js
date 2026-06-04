@@ -402,14 +402,14 @@ export default function AirisGemini() {
                 isDarkMode ? 'border-slate-700/70 bg-slate-900/50' : 'border-slate-200 bg-white/70'
               }`}
             >
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[520px] border-collapse text-left text-sm md:text-base">
+              <div className="max-w-full overflow-x-auto">
+                <table className="w-full table-fixed border-collapse text-left text-sm md:table-auto md:text-base">
                   <thead className={isDarkMode ? 'bg-slate-800/80' : 'bg-slate-100/90'}>
                     <tr>
                       {headerRow.map((cell, cellIndex) => (
                         <th
                           key={cellIndex}
-                          className={`px-4 py-3 font-bold ${
+                          className={`break-words px-4 py-3 font-bold ${
                             isDarkMode ? 'text-slate-100' : 'text-slate-950'
                           }`}
                         >
@@ -429,7 +429,7 @@ export default function AirisGemini() {
                         {row.map((cell, cellIndex) => (
                           <td
                             key={cellIndex}
-                            className={`px-4 py-3 align-top ${
+                            className={`break-words px-4 py-3 align-top ${
                               cellIndex === 0
                                 ? `font-semibold ${isDarkMode ? 'text-slate-100' : 'text-slate-900'}`
                                 : `${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`
@@ -749,9 +749,9 @@ export default function AirisGemini() {
 
         {/* CHAT CONTAINER */}
         {activeTab === "chat" ? (
-          <div className="relative z-10 flex min-h-0 flex-1 flex-col">
+          <div className="relative z-10 flex min-h-0 min-w-0 flex-1 flex-col">
             {/* MESSAGES AREA */}
-            <div className="flex-1 overflow-y-auto px-4 py-6 md:px-8">
+            <div className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto px-4 py-6 md:px-8">
               {/* WELCOME STATE */}
               {messages.length === 0 && (
                 <div className={`mx-auto flex h-full max-w-3xl flex-col items-center justify-center px-4 pb-20 text-center ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
@@ -785,15 +785,15 @@ export default function AirisGemini() {
               {messages.map((m, i) => (
                 <div 
                   key={i} 
-                  className={`mx-auto flex w-full max-w-3xl gap-4 py-4 animate-fadeInUp ${
+                  className={`mx-auto flex w-full max-w-3xl min-w-0 gap-4 py-4 animate-fadeInUp ${
                     m.role === 'user' ? 'justify-end' : 'justify-start'
                   }`}
                 >
                   {/* MESSAGE BUBBLE */}
-                  <div className={`group max-w-[85%] px-4 py-3 text-sm leading-relaxed md:text-base ${
+                  <div className={`group min-w-0 max-w-[85%] px-4 py-3 text-sm leading-relaxed md:text-base ${
                     m.role === 'user' 
                       ? userBubbleClass 
-                      : `max-w-none flex-1 ${isDarkMode ? 'text-slate-100' : 'text-slate-900'}`
+                      : `max-w-full flex-1 ${isDarkMode ? 'text-slate-100' : 'text-slate-900'}`
                   }`}>
                     {m.role === 'assistant' ? renderAssistantMessage(m.content, i) : renderContent(m.content)}
                   </div>

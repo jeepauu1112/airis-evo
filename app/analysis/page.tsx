@@ -265,8 +265,8 @@ export default function AnalysisPage({ embedded = false, isDarkMode = true }: An
   const totalAgingWo = agingData.reduce((total, item) => total + item.value, 0);
   const containerClass = embedded
     ? `h-full overflow-y-auto overflow-x-hidden ${isDarkMode ? "text-slate-100" : "text-slate-950"}`
-    : `min-h-screen overflow-x-hidden ${isDarkMode ? "bg-[#07111f] text-slate-100" : "bg-slate-50 text-slate-950"}`;
-  const backgroundLayerClass = embedded ? "absolute" : "fixed";
+    : `isolate min-h-screen overflow-x-hidden ${isDarkMode ? "bg-[#07111f] text-slate-100" : "bg-slate-50 text-slate-950"}`;
+  const backgroundLayerClass = "pointer-events-none fixed -z-10";
   const backgroundClass = isDarkMode
     ? "bg-[radial-gradient(circle_at_top_left,rgba(6,182,212,0.18),transparent_32%),linear-gradient(135deg,#0f1d32_0%,#07111f_48%,#020617_100%)]"
     : "bg-[radial-gradient(circle_at_top_left,rgba(6,182,212,0.12),transparent_34%),linear-gradient(135deg,rgba(248,250,252,0.94)_0%,rgba(241,245,249,0.9)_52%,rgba(226,232,240,0.88)_100%)]";
@@ -630,15 +630,19 @@ export default function AnalysisPage({ embedded = false, isDarkMode = true }: An
 
   return (
     <main className={`relative ${containerClass}`}>
-      <div className={`${backgroundLayerClass} inset-0 ${backgroundClass}`} />
-      <div
-        className={`${backgroundLayerClass} inset-0 ${imageOpacity}`}
-        style={{
-          backgroundImage: "url(https://res.cloudinary.com/cdb-klb1/image/upload/v1780291636/DSC06031_ewwkyo.jpg)",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      />
+      {!embedded && (
+        <>
+          <div className={`${backgroundLayerClass} inset-0 ${backgroundClass}`} />
+          <div
+            className={`${backgroundLayerClass} inset-0 ${imageOpacity}`}
+            style={{
+              backgroundImage: "url(https://res.cloudinary.com/cdb-klb1/image/upload/v1780291636/DSC06031_ewwkyo.jpg)",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+            }}
+          />
+        </>
+      )}
 
       <div ref={exportRef} className="relative mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 pb-16 pt-6 sm:px-6 lg:px-8">
         <header className={`card flex flex-col gap-4 rounded-2xl border p-5 shadow-2xl backdrop-blur-xl md:flex-row md:items-center md:justify-between ${panelClass}`}>

@@ -5,11 +5,13 @@ import {
   Activity,
   AlertTriangle,
   BarChart3,
+  CheckCircle2,
   ClipboardList,
   Download,
   Gauge,
   RefreshCw,
   ShieldCheck,
+  Sparkles,
   TimerReset,
   UserRoundCheck,
   Users,
@@ -31,7 +33,7 @@ import { AnalyticsSkeleton } from "@/components/analysis/AnalyticsSkeleton";
 import { ChartCard } from "@/components/analysis/ChartCard";
 import { SummaryCard } from "@/components/analysis/SummaryCard";
 import { useAnalytics } from "@/hooks/useAnalytics";
-import type { AnalyticsChartDatum } from "@/types/analytics";
+import type { AiSummary, AnalyticsChartDatum } from "@/types/analytics";
 
 const AREA_COLORS = ["#06b6d4", "#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899", "#94a3b8"];
 const AGING_COLORS = ["#22c55e", "#eab308", "#ef4444", "#94a3b8"];
@@ -71,6 +73,175 @@ function EmptyState({ isDarkMode }: { isDarkMode: boolean }) {
   );
 }
 
+function getRiskBadgeClass(riskLevel: string | undefined, isDarkMode: boolean): string {
+  if (riskLevel === "Rendah") {
+    return isDarkMode
+      ? "border-emerald-300/30 bg-emerald-400/15 text-emerald-200"
+      : "border-emerald-200 bg-emerald-50 text-emerald-700";
+  }
+
+  if (riskLevel === "Sedang") {
+    return isDarkMode
+      ? "border-amber-300/30 bg-amber-400/15 text-amber-200"
+      : "border-amber-200 bg-amber-50 text-amber-700";
+  }
+
+  if (riskLevel === "Tinggi") {
+    return isDarkMode
+      ? "border-red-300/30 bg-red-400/15 text-red-200"
+      : "border-red-200 bg-red-50 text-red-700";
+  }
+
+  return isDarkMode
+    ? "border-slate-300/20 bg-slate-400/10 text-slate-300"
+    : "border-slate-200 bg-slate-100 text-slate-600";
+}
+
+function ExecutiveSummaryCard({
+  aiSummary,
+  isLoading,
+  isDarkMode,
+  panelClass,
+  headingTextClass,
+  mutedTextClass,
+}: {
+  aiSummary?: AiSummary | null;
+  isLoading: boolean;
+  isDarkMode: boolean;
+  panelClass: string;
+  headingTextClass: string;
+  mutedTextClass: string;
+}) {
+  const hasContent = Boolean(
+    aiSummary &&
+      (
+        aiSummary.executive_summary.length ||
+        aiSummary.key_risks.length ||
+        aiSummary.recommendations.length ||
+        aiSummary.priority_focus.length ||
+        aiSummary.risk_level
+      )
+  );
+
+  if (isLoading) {
+    return (
+      <section className={`exclude-from-pdf card rounded-2xl border p-5 shadow-2xl backdrop-blur-xl ${panelClass}`}>
+        <div className="flex items-center gap-3 text-cyan-300">
+          <Sparkles size={20} />
+          <p className="text-sm font-semibold">Generating Executive Summary...</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (!aiSummary || !hasContent) {
+    return (
+      <section className={`exclude-from-pdf card rounded-2xl border p-5 shadow-2xl backdrop-blur-xl ${panelClass}`}>
+        <div className="flex items-center gap-2 text-cyan-300">
+          <Sparkles size={20} />
+          <h2 className={`text-xl font-bold ${headingTextClass}`}>Executive Summary AI</h2>
+        </div>
+        <p className={`mt-2 text-sm ${mutedTextClass}`}>Executive Summary belum tersedia.</p>
+      </section>
+    );
+  }
+
+  return (
+    <section className={`exclude-from-pdf card rounded-2xl border p-5 shadow-2xl backdrop-blur-xl ${panelClass}`}>
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div>
+          <div className="flex items-center gap-2 text-cyan-300">
+            <Sparkles size={20} />
+            <h2 className={`text-xl font-bold ${headingTextClass}`}>Executive Summary AI</h2>
+          </div>
+          <p className={`mt-2 text-sm ${mutedTextClass}`}>
+            AI-generated management insight berdasarkan data Work Order terbaru.
+          </p>
+        </div>
+
+        <span className={`inline-flex w-fit items-center rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] ${getRiskBadgeClass(aiSummary.risk_level, isDarkMode)}`}>
+          Risk: {aiSummary.risk_level || "Unknown"}
+        </span>
+      </div>
+
+      <div className="mt-5 grid gap-4 lg:grid-cols-[1.15fr_1fr]">
+        <div className={`rounded-xl border p-4 ${isDarkMode ? "border-white/10 bg-slate-950/25" : "border-slate-200 bg-white/70"}`}>
+          <h3 className={`text-sm font-semibold ${headingTextClass}`}>Executive Summary</h3>
+          {aiSummary.executive_summary.length ? (
+            <ul className="mt-3 space-y-2">
+              {aiSummary.executive_summary.map((item) => (
+                <li key={item} className={`flex gap-2 text-sm leading-6 ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>
+                  <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-cyan-300" />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className={`mt-3 text-sm ${mutedTextClass}`}>Executive summary belum tersedia.</p>
+          )}
+        </div>
+
+        <div className="grid gap-4">
+          <div className={`rounded-xl border p-4 ${isDarkMode ? "border-red-300/15 bg-red-400/5" : "border-red-100 bg-red-50/70"}`}>
+            <h3 className={`flex items-center gap-2 text-sm font-semibold ${headingTextClass}`}>
+              <AlertTriangle size={16} className="text-red-300" />
+              Key Risks
+            </h3>
+            {aiSummary.key_risks.length ? (
+              <ul className="mt-3 space-y-2">
+                {aiSummary.key_risks.map((item) => (
+                  <li key={item} className={`flex gap-2 text-sm leading-6 ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>
+                    <AlertTriangle size={15} className="mt-1 flex-shrink-0 text-red-300" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className={`mt-3 text-sm ${mutedTextClass}`}>Tidak ada risiko utama.</p>
+            )}
+          </div>
+
+          <div className={`rounded-xl border p-4 ${isDarkMode ? "border-emerald-300/15 bg-emerald-400/5" : "border-emerald-100 bg-emerald-50/70"}`}>
+            <h3 className={`flex items-center gap-2 text-sm font-semibold ${headingTextClass}`}>
+              <CheckCircle2 size={16} className="text-emerald-300" />
+              Recommendations
+            </h3>
+            {aiSummary.recommendations.length ? (
+              <ul className="mt-3 space-y-2">
+                {aiSummary.recommendations.map((item) => (
+                  <li key={item} className={`flex gap-2 text-sm leading-6 ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>
+                    <CheckCircle2 size={15} className="mt-1 flex-shrink-0 text-emerald-300" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className={`mt-3 text-sm ${mutedTextClass}`}>Belum ada rekomendasi.</p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {aiSummary.priority_focus.length > 0 && (
+        <div className="mt-5 flex flex-wrap gap-2">
+          {aiSummary.priority_focus.map((item) => (
+            <span
+              key={item}
+              className={`rounded-full border px-3 py-1 text-xs font-semibold ${
+                isDarkMode
+                  ? "border-cyan-300/20 bg-cyan-400/10 text-cyan-100"
+                  : "border-cyan-200 bg-cyan-50 text-cyan-700"
+              }`}
+            >
+              {item}
+            </span>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
 interface AnalysisPageProps {
   embedded?: boolean;
   isDarkMode?: boolean;
@@ -85,9 +256,9 @@ export default function AnalysisPage({ embedded = false, isDarkMode = true }: An
   const areaData = data ? toChartData(data.by_area) : [];
   const picData = data?.by_pic ? toChartData(data.by_pic) : [];
   const agingData = data?.by_aging ? toChartData(data.by_aging) : [];
-  const backlogPercentage = data?.total_wo ? Math.round((data.backlog_wo / data.total_wo) * 100) : 0;
+  const backlogPercentage = data?.backlog_percentage ?? (data?.total_wo ? Math.round((data.backlog_wo / data.total_wo) * 100) : 0);
   const closePercentage = data?.close_percentage ?? 0;
-  const agingCritical = data?.by_aging?.[">30 Hari"] ?? 0;
+  const agingCritical = data?.by_aging[">30 Hari"] ?? 0;
   const dominantPic = picData[0]?.name ?? "N/A";
   const totalAreaWo = areaData.reduce((total, item) => total + item.value, 0);
   const totalPicWo = picData.reduce((total, item) => total + item.value, 0);
@@ -517,6 +688,15 @@ export default function AnalysisPage({ embedded = false, isDarkMode = true }: An
             </button>
           </div>
         </header>
+
+        <ExecutiveSummaryCard
+          aiSummary={data?.ai_summary ?? null}
+          isLoading={loading && !data}
+          isDarkMode={isDarkMode}
+          panelClass={panelClass}
+          headingTextClass={headingTextClass}
+          mutedTextClass={mutedTextClass}
+        />
 
         {error && (
           <section className="rounded-2xl border border-red-400/30 bg-red-500/10 p-5 text-red-100 shadow-2xl shadow-red-950/20 backdrop-blur-xl">

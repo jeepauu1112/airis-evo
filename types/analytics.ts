@@ -1,15 +1,34 @@
-export interface AnalyticsResponse {
-  success: boolean;
+export interface AiSummary {
+  executive_summary: string[];
+  key_risks: string[];
+  recommendations: string[];
+  priority_focus: string[];
+  risk_level: string;
+}
+
+export interface AnalyticsMetrics {
   total_wo: number;
   backlog_wo: number;
+  close_wo: number;
   corrective: number;
   preventive: number;
-  close_wo?: number;
-  close_percentage?: number;
+  backlog_percentage: number;
+  close_percentage: number;
   by_status: Record<string, number>;
   by_area: Record<string, number>;
-  by_pic?: Record<string, number>;
-  by_aging?: Record<string, number>;
+  by_pic: Record<string, number>;
+  by_aging: Record<string, number>;
+}
+
+export interface AnalyticsEndpointResponse {
+  success: boolean;
+  analytics: AnalyticsMetrics;
+  ai_summary?: AiSummary | null;
+}
+
+export interface AnalyticsResponse extends AnalyticsMetrics {
+  success: boolean;
+  ai_summary?: AiSummary | null;
 }
 
 export interface AnalyticsChartDatum {

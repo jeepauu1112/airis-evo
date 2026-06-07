@@ -472,3 +472,11 @@ html:not(.dark) .bg-slate-800.border.border-slate-700 {
 .pdf-export-mode [class*="rounded-full"] {
   box-shadow: none !important;
 }
+
+.exclude-from-pdf {
+  display: block;
+}
+
+.pdf-export-mode .exclude-from-pdf {
+  display: none !important;
+}

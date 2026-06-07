@@ -106,7 +106,7 @@ export default function LoginPage() {
           className="text-sm font-bold uppercase text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-blue-300 to-cyan-200 sm:text-xl"
           style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}
         >
-          IPP KALBAR-1 2X100 MW
+          PLTU KALBAR-1 2X100 MW
         </p>
       </div>
 

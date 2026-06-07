@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Infinity, Menu, X, MessageSquare, Send, Copy, Check, BarChart3, Moon, Sun, LogOut, User, PanelLeftClose, Trash2, Mic, MicOff } from 'lucide-react';
 import { useAuth } from '@/lib/useAuth';
-import AnalysisDashboard from './components/AnalysisDashboard';
+import AnalysisPage from './analysis/page';
 
 const CHAT_SESSION_STORAGE_PREFIX = 'airis-evo-chat-session';
 const CHAT_RESPONSE_CACHE_PREFIX = 'airis-evo-chat-response-cache';
@@ -317,15 +317,132 @@ export default function AirisGemini() {
         if (part.startsWith('**') && part.endsWith('**')) {
           return (
             <strong key={index} className={`font-bold ${isDarkMode ? 'text-slate-100' : 'text-slate-950'}`}>
-              {part.replace(/\*\*/g, '')}
+              {formatInlineLatex(part.replace(/\*\*/g, ''))}
             </strong>
           );
         }
-        return part;
+        return formatInlineLatex(part);
       });
   };
 
-  const cleanMarkdownCell = (cell) => cell.replace(/\*\*/g, '').trim();
+  const cleanMarkdownCell = (cell) => formatInlineLatex(cell.replace(/\*\*/g, '').trim());
+
+  const toSubscript = (value) => {
+    const subscriptMap = {
+      0: '₀',
+      1: '₁',
+      2: '₂',
+      3: '₃',
+      4: '₄',
+      5: '₅',
+      6: '₆',
+      7: '₇',
+      8: '₈',
+      9: '₉',
+      a: 'ₐ',
+      e: 'ₑ',
+      h: 'ₕ',
+      i: 'ᵢ',
+      j: 'ⱼ',
+      k: 'ₖ',
+      l: 'ₗ',
+      m: 'ₘ',
+      n: 'ₙ',
+      o: 'ₒ',
+      p: 'ₚ',
+      r: 'ᵣ',
+      s: 'ₛ',
+      t: 'ₜ',
+      u: 'ᵤ',
+      v: 'ᵥ',
+      x: 'ₓ',
+    };
+
+    return String(value)
+      .split('')
+      .map((char) => subscriptMap[char] || char)
+      .join('');
+  };
+
+  const cleanLatexFormula = (formula) => String(formula)
+    .replace(/\\\\/g, '\\')
+    .replace(/\\+\(/g, '')
+    .replace(/\\+\)/g, '')
+    .replace(/\\\[/g, '')
+    .replace(/\\\]/g, '')
+    .replace(/\$\$/g, '')
+    .replace(/\\times/g, '×')
+    .replace(/\\cdot/g, '·')
+    .replace(/\$/g, '')
+    .replace(/\\(?:dfrac|frac)\s*\\text\{([^{}]+)\}\s*\{\s*\\text\{([^{}]+)\}\s*\}/g, '$1 / $2')
+    .replace(/\\(?:dfrac|frac)\s*\{\s*\\text\{([^{}]+)\}\s*\}\s*\{\s*\\text\{([^{}]+)\}\s*\}/g, '$1 / $2')
+    .replace(/\\(?:dfrac|frac)\s*\{\s*([^{}]+)\s*\}\s*\{\s*([^{}]+)\s*\}/g, '$1 / $2')
+    .replace(/\\eta/g, 'eta')
+    .replace(/\\Delta/g, 'Delta')
+    .replace(/\\dot\{([^{}]+)\}/g, '$1\u0307')
+    .replace(/\\frac\{([^{}]+)\}\{([^{}]+)\}/g, '$1 / $2')
+    .replace(/\\left/g, '')
+    .replace(/\\right/g, '')
+    .replace(/\\mathrm\{([^{}]+)\}/g, '$1')
+    .replace(/\\text\{([^{}]+)\}/g, '$1')
+    .replace(/\\(?:mathrm|text)\s+/g, '')
+    .replace(/_\{([^{}]+)\}/g, (_, subscript) => toSubscript(subscript))
+    .replace(/_([A-Za-z0-9]+)/g, (_, subscript) => toSubscript(subscript))
+    .replace(/\^([A-Za-z0-9]+)/g, '^$1')
+    .replace(/\\[a-zA-Z]+/g, '')
+    .replace(/\\/g, '')
+    .replace(/[{}]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  const formatInlineLatex = (text) => {
+    const withInlineMath = text
+      .replace(/\\+\(([\s\S]*?)\\+\)/g, (_, formula) => cleanLatexFormula(formula))
+      .replace(/\$([^$]+)\$/g, (_, formula) => cleanLatexFormula(formula));
+
+    return withInlineMath.includes('\\') || /_\{?[A-Za-z0-9]/.test(withInlineMath)
+      ? cleanLatexFormula(withInlineMath)
+      : withInlineMath;
+  };
+
+  const renderFormulaBlock = (formula, key) => {
+    const normalizedFormula = formula
+      .replace(/\\\[/g, '')
+      .replace(/\\\]/g, '')
+      .replace(/\$\$/g, '')
+      .trim();
+    const fractionMatch = normalizedFormula.match(/^(.+?)=\s*\\frac\{([^{}]+)\}\{([^{}]+)\}\s*(.*)$/);
+    const trailingFormula = fractionMatch ? cleanLatexFormula(fractionMatch[4] || '') : '';
+
+    return (
+      <div
+        key={key}
+        className={`my-5 rounded-2xl border px-5 py-4 shadow-lg ${
+          isDarkMode
+            ? 'border-cyan-300/20 bg-cyan-950/20 text-slate-100 shadow-black/20'
+            : 'border-cyan-200 bg-cyan-50/80 text-slate-900 shadow-slate-200/60'
+        }`}
+      >
+        {fractionMatch ? (
+          <div className="flex flex-wrap items-center gap-3 text-xl font-semibold md:text-2xl">
+            <span>{cleanLatexFormula(fractionMatch[1])}</span>
+            <span>=</span>
+            <span className="inline-flex min-w-28 flex-col items-center leading-none">
+              <span className="border-b border-current px-3 pb-2">
+                {cleanLatexFormula(fractionMatch[2])}
+              </span>
+              <span className="px-3 pt-2">{cleanLatexFormula(fractionMatch[3])}</span>
+            </span>
+            {trailingFormula && <span>{trailingFormula}</span>}
+          </div>
+        ) : (
+          <p className="break-words text-xl font-semibold md:text-2xl">
+            {cleanLatexFormula(normalizedFormula)}
+          </p>
+        )}
+      </div>
+    );
+  };
 
   const renderCopyBlock = (text, key) => (
     <div
@@ -358,6 +475,25 @@ export default function AirisGemini() {
     for (let i = 0; i < lines.length; i += 1) {
       const line = lines[i];
       const trimmedLine = line.trim();
+
+      if (trimmedLine.startsWith('\\[') || trimmedLine.startsWith('$$')) {
+        const formulaLines = [line.replace(/^\\\[/, '').replace(/^\$\$/, '')];
+        const endToken = trimmedLine.startsWith('\\[') ? '\\]' : '$$';
+
+        while (i < lines.length && !lines[i].trim().endsWith(endToken)) {
+          i += 1;
+          formulaLines.push(lines[i]);
+        }
+
+        const formula = formulaLines
+          .join('\n')
+          .replace(/\\\]$/, '')
+          .replace(/\$\$$/, '')
+          .trim();
+
+        rendered.push(renderFormulaBlock(formula, `${copyPrefix}-formula-${i}`));
+        continue;
+      }
 
       if (trimmedLine.startsWith('```')) {
         const codeLines = [];
@@ -734,7 +870,7 @@ export default function AirisGemini() {
               className="text-center text-base font-bold uppercase text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 sm:text-lg lg:text-left"
               style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}
             >
-              IPP KALBAR-1 2X100 MW
+              PLTU KALBAR-1 2X100 MW
             </h1>
           </div>
           
@@ -881,8 +1017,8 @@ export default function AirisGemini() {
             </div>
           </div>
         ) : activeTab === "analysis" ? (
-          <div className="relative z-10 flex min-h-0 flex-1">
-            <AnalysisDashboard isDarkMode={isDarkMode} />
+          <div className="relative z-10 min-h-0 min-w-0 flex-1 overflow-hidden">
+            <AnalysisPage embedded isDarkMode={isDarkMode} />
           </div>
         ) : null}
       </div>

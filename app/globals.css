@@ -324,3 +324,151 @@ html:not(.dark) .bg-slate-800.border.border-slate-700 {
   background-color: #f1f5f9;
   border-color: #cbd5e1;
 }
+
+/* PDF export mode for AIRIS-EVO Analysis Dashboard */
+.pdf-export-mode {
+  width: 900px !important;
+  max-width: none !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  padding: 20px !important;
+  gap: 8px !important;
+}
+
+.pdf-export-mode * {
+  color: #0f172a !important;
+  text-shadow: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+.pdf-export-mode .card {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+  padding: 10px !important;
+}
+
+.pdf-export-mode button {
+  display: none !important;
+}
+
+.pdf-export-mode header {
+  min-height: auto !important;
+}
+
+.pdf-export-mode h1 {
+  font-size: 22px !important;
+  line-height: 1.15 !important;
+  margin-top: 8px !important;
+}
+
+.pdf-export-mode h2 {
+  font-size: 13px !important;
+  line-height: 1.2 !important;
+}
+
+.pdf-export-mode p {
+  font-size: 10px !important;
+  line-height: 1.25 !important;
+}
+
+.pdf-export-mode section {
+  gap: 8px !important;
+}
+
+.pdf-export-mode > section,
+.pdf-export-mode > header {
+  break-inside: avoid !important;
+}
+
+.pdf-export-mode .grid {
+  gap: 8px !important;
+}
+
+.pdf-export-mode > section:nth-of-type(1) {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+}
+
+.pdf-export-mode > section:nth-of-type(2),
+.pdf-export-mode > section:nth-of-type(3),
+.pdf-export-mode > section:nth-of-type(4),
+.pdf-export-mode > section:nth-of-type(5) {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+.pdf-export-mode article.card {
+  min-height: 74px !important;
+}
+
+.pdf-export-mode article.card p:first-child {
+  font-size: 9px !important;
+}
+
+.pdf-export-mode article.card p:nth-child(2) {
+  font-size: 20px !important;
+  line-height: 1 !important;
+  margin-top: 6px !important;
+}
+
+.pdf-export-mode article.card p:last-child {
+  font-size: 9px !important;
+  margin-top: 8px !important;
+}
+
+.pdf-export-mode article.card svg,
+.pdf-export-mode header svg {
+  width: 15px !important;
+  height: 15px !important;
+}
+
+.pdf-export-mode .chart-body {
+  height: 178px !important;
+  min-height: 0 !important;
+}
+
+.pdf-export-mode .chart-body > .mx-auto {
+  height: 110px !important;
+  max-width: 210px !important;
+}
+
+.pdf-export-mode .recharts-responsive-container {
+  width: 100% !important;
+  height: 145px !important;
+  min-width: 0 !important;
+}
+
+.pdf-export-mode .recharts-wrapper,
+.pdf-export-mode .recharts-surface {
+  max-width: 100% !important;
+}
+
+.pdf-export-mode .recharts-text,
+.pdf-export-mode .recharts-cartesian-axis-tick-value {
+  fill: #475569 !important;
+  font-size: 9px !important;
+}
+
+.pdf-export-mode .recharts-cartesian-grid line {
+  stroke: rgba(100, 116, 139, 0.22) !important;
+}
+
+.pdf-export-mode table {
+  font-size: 9px !important;
+}
+
+.pdf-export-mode th,
+.pdf-export-mode td {
+  padding: 5px 8px !important;
+  color: #0f172a !important;
+  border-color: #e2e8f0 !important;
+}
+
+.pdf-export-mode thead {
+  background: #f8fafc !important;
+}
+
+.pdf-export-mode [class*="rounded-full"] {
+  box-shadow: none !important;
+}

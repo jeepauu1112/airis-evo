@@ -351,10 +351,10 @@ export default function ForecastPage({ embedded = false, isDarkMode = true }: Fo
           <div>
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200">
               <BrainCircuit size={14} />
-              AIRIS ML Engine
+              AIRIS-EVO Machine Learning Engine
             </div>
             <h1 className={`text-3xl font-bold tracking-tight md:text-4xl ${headingClass}`}>
-              AIRIS-EVO Predictive Maintenance Dashboard
+              AIRIS-EVO Forecasting Maintenance Dashboard
             </h1>
             <p className={`mt-3 max-w-2xl text-sm leading-relaxed md:text-base ${mutedClass}`}>
               Machine Learning Forecast for Work Order Planning

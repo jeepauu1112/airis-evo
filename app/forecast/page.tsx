@@ -29,7 +29,7 @@ import {
   TARGET_ELIMINATION_RATE,
 } from "@/components/forecast/types";
 
-const ML_API_BASE_URL = "http://31.97.107.231:8001";
+const FORECAST_API_PROXY = "/api/forecast";
 const AREA_ORDER = ["BOP", "Unit1", "Unit2", "CH"] as const;
 const WORK_TYPE_ORDER = ["RTF", "CM", "PM", "CD", "EM"] as const;
 
@@ -258,10 +258,10 @@ export default function ForecastPage({ embedded = false, isDarkMode = true }: Fo
 
     try {
       const [woResponse, areaResponse, workTypeResponse, healthResponse] = await Promise.all([
-        fetch(`${ML_API_BASE_URL}/forecast-wo`, { cache: "no-store" }),
-        fetch(`${ML_API_BASE_URL}/forecast-area`, { cache: "no-store" }),
-        fetch(`${ML_API_BASE_URL}/forecast-worktype`, { cache: "no-store" }),
-        fetch(`${ML_API_BASE_URL}/data-health`, { cache: "no-store" }),
+        fetch(`${FORECAST_API_PROXY}?resource=forecast-wo`, { cache: "no-store" }),
+        fetch(`${FORECAST_API_PROXY}?resource=forecast-area`, { cache: "no-store" }),
+        fetch(`${FORECAST_API_PROXY}?resource=forecast-worktype`, { cache: "no-store" }),
+        fetch(`${FORECAST_API_PROXY}?resource=data-health`, { cache: "no-store" }),
       ]);
       const failedResponse = [woResponse, areaResponse, workTypeResponse, healthResponse].find((response) => !response.ok);
 

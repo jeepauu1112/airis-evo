@@ -2,9 +2,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Infinity, Menu, X, MessageSquare, Send, Copy, Check, BarChart3, Moon, Sun, LogOut, User, PanelLeftClose, Trash2, Mic, MicOff } from 'lucide-react';
+import { Infinity, Menu, X, MessageSquare, Send, Copy, Check, BarChart3, BrainCircuit, Moon, Sun, LogOut, User, PanelLeftClose, Trash2, Mic, MicOff } from 'lucide-react';
 import { useAuth } from '@/lib/useAuth';
 import AnalysisPage from './analysis/page';
+import ForecastPage from './forecast/page';
 
 const CHAT_SESSION_STORAGE_PREFIX = 'airis-evo-chat-session';
 const CHAT_RESPONSE_CACHE_PREFIX = 'airis-evo-chat-response-cache';
@@ -784,6 +785,17 @@ export default function AirisGemini() {
           {!sidebarCollapsed && <span className="font-medium">Analysis</span>}
         </button>
 
+        <button
+          onClick={() => { setActiveTab("forecast"); setSidebarOpen(false); }}
+          className={`flex h-10 items-center gap-3 rounded-lg px-3 transition ${
+            activeTab === 'forecast' ? navActiveClass : navIdleClass
+          } ${sidebarCollapsed ? 'lg:justify-center lg:px-0' : ''}`}
+          title={sidebarCollapsed ? 'Forecast' : ''}
+        >
+          <BrainCircuit size={20} />
+          {!sidebarCollapsed && <span className="font-medium">Forecast</span>}
+        </button>
+
         {user && (
           <div className={`mt-auto rounded-lg px-3 py-3 ${isDarkMode ? 'text-slate-300' : 'text-slate-700'} ${sidebarCollapsed ? 'lg:px-0' : ''}`}>
             <div className={`flex items-center gap-3 ${sidebarCollapsed ? 'lg:justify-center' : ''}`}>
@@ -1019,6 +1031,10 @@ export default function AirisGemini() {
         ) : activeTab === "analysis" ? (
           <div className="relative z-10 min-h-0 min-w-0 flex-1 overflow-hidden">
             <AnalysisPage embedded isDarkMode={isDarkMode} />
+          </div>
+        ) : activeTab === "forecast" ? (
+          <div className="relative z-10 min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden">
+            <ForecastPage embedded isDarkMode={isDarkMode} />
           </div>
         ) : null}
       </div>

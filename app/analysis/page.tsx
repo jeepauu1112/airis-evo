@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Activity,
   AlertTriangle,
@@ -16,6 +16,7 @@ import {
   UserRoundCheck,
   Users,
   Wrench,
+  X,
 } from "lucide-react";
 import {
   Bar,
@@ -33,11 +34,22 @@ import { AnalyticsSkeleton } from "@/components/analysis/AnalyticsSkeleton";
 import { ChartCard } from "@/components/analysis/ChartCard";
 import { SummaryCard } from "@/components/analysis/SummaryCard";
 import { useAnalytics } from "@/hooks/useAnalytics";
-import type { AiSummary, AnalyticsChartDatum } from "@/types/analytics";
+import type { AiSummary, AnalyticsChartDatum, WorkOrderDetail } from "@/types/analytics";
 
 const AREA_COLORS = ["#06b6d4", "#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899", "#94a3b8"];
 const AGING_COLORS = ["#22c55e", "#eab308", "#ef4444", "#94a3b8"];
 const PLN_IPS_LOGO_URL = "https://res.cloudinary.com/cdb-klb1/image/upload/v1780321996/PLN_IPS_Logo_vmda13.png";
+
+type AnalyticsData = NonNullable<ReturnType<typeof useAnalytics>["data"]>;
+type BreakdownType = "status" | "area" | "pic" | "aging";
+
+interface SelectedBreakdown {
+  type: BreakdownType;
+  title: string;
+  label: string;
+  value: number;
+  total: number;
+}
 
 function toChartData(record: Record<string, number>): AnalyticsChartDatum[] {
   return Object.entries(record)
@@ -242,6 +254,528 @@ function ExecutiveSummaryCard({
   );
 }
 
+function getWorkOrderValue(row: WorkOrderDetail, keys: string[]): string {
+  for (const key of keys) {
+    const value = row[key];
+
+    if (value !== undefined && value !== null && String(value).trim()) {
+      return String(value);
+    }
+  }
+
+  return "-";
+}
+
+function matchesBreakdown(row: WorkOrderDetail, selected: SelectedBreakdown): boolean {
+  const valueMap: Record<BreakdownType, string[]> = {
+    status: ["status", "wo_status", "wostatus"],
+    area: ["area", "unit", "location"],
+    pic: ["pic", "owner", "person_group", "personGroup", "maint_org"],
+    aging: ["aging", "aging_category", "agingCategory"],
+  };
+  const selectedValue = selected.label.trim().toLowerCase();
+
+  return valueMap[selected.type].some((key) => {
+    const value = row[key];
+
+    return value !== undefined && value !== null && String(value).trim().toLowerCase() === selectedValue;
+  });
+}
+
+function WorkOrderBreakdownModal({
+  selected,
+  details,
+  isDarkMode,
+  headingTextClass,
+  mutedTextClass,
+  tableHeaderClass,
+  tableBorderClass,
+  onClose,
+}: {
+  selected: SelectedBreakdown | null;
+  details: WorkOrderDetail[];
+  isDarkMode: boolean;
+  headingTextClass: string;
+  mutedTextClass: string;
+  tableHeaderClass: string;
+  tableBorderClass: string;
+  onClose: () => void;
+}) {
+  if (!selected) return null;
+
+  const filteredDetails = details.filter((row) => matchesBreakdown(row, selected));
+  const percentage = selected.total ? Math.round((selected.value / selected.total) * 100) : 0;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/70 p-3 backdrop-blur-sm sm:items-center sm:p-6">
+      <div className={`max-h-[86vh] w-full max-w-5xl overflow-hidden rounded-2xl border shadow-2xl ${
+        isDarkMode ? "border-white/10 bg-slate-900/95" : "border-slate-200 bg-white"
+      }`}>
+        <div className={`flex items-start justify-between gap-4 border-b p-5 ${tableBorderClass}`}>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-300">Tabel WO</p>
+            <h2 className={`mt-2 text-2xl font-bold ${headingTextClass}`}>{selected.title}: {selected.label}</h2>
+            <p className={`mt-1 text-sm ${mutedTextClass}`}>
+              Total {selected.value.toLocaleString("id-ID")} WO dari {selected.total.toLocaleString("id-ID")} data ({percentage}%).
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border transition ${
+              isDarkMode
+                ? "border-white/10 bg-white/5 text-slate-200 hover:bg-white/10"
+                : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"
+            }`}
+            aria-label="Tutup tabel WO"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="max-h-[64vh] overflow-auto p-5">
+          {filteredDetails.length ? (
+            <div className={`overflow-hidden rounded-2xl border ${tableBorderClass}`}>
+              <table className="w-full min-w-[760px] text-left text-sm">
+                <thead className={tableHeaderClass}>
+                  <tr>
+                    <th className="px-4 py-3 font-semibold">WO</th>
+                    <th className="px-4 py-3 font-semibold">Description</th>
+                    <th className="px-4 py-3 font-semibold">Status</th>
+                    <th className="px-4 py-3 font-semibold">Area</th>
+                    <th className="px-4 py-3 font-semibold">PIC</th>
+                    <th className="px-4 py-3 font-semibold">Aging</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredDetails.map((row, index) => (
+                    <tr key={`${getWorkOrderValue(row, ["wonum", "wo_number"])}-${index}`} className={`border-t ${tableBorderClass}`}>
+                      <td className={`px-4 py-3 font-semibold ${headingTextClass}`}>{getWorkOrderValue(row, ["wonum", "wo_number", "wo"])}</td>
+                      <td className={`px-4 py-3 ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>{getWorkOrderValue(row, ["description", "desc", "summary"])}</td>
+                      <td className={`px-4 py-3 ${mutedTextClass}`}>{getWorkOrderValue(row, ["status", "wo_status", "wostatus"])}</td>
+                      <td className={`px-4 py-3 ${mutedTextClass}`}>{getWorkOrderValue(row, ["area", "unit", "location"])}</td>
+                      <td className={`px-4 py-3 ${mutedTextClass}`}>{getWorkOrderValue(row, ["pic", "owner", "person_group", "personGroup", "maint_org"])}</td>
+                      <td className={`px-4 py-3 ${mutedTextClass}`}>{getWorkOrderValue(row, ["aging", "aging_category", "agingCategory"])}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className={`rounded-2xl border p-5 ${isDarkMode ? "border-white/10 bg-white/[0.04]" : "border-slate-200 bg-slate-50"}`}>
+              <p className={`text-sm ${headingTextClass}`}>
+                Detail WO belum tersedia dari endpoint. Saat ini data yang tersedia berupa agregat.
+              </p>
+              <div className={`mt-4 overflow-hidden rounded-2xl border ${tableBorderClass}`}>
+                <table className="w-full text-left text-sm">
+                  <thead className={tableHeaderClass}>
+                    <tr>
+                      <th className="px-4 py-3 font-semibold">Kategori</th>
+                      <th className="px-4 py-3 text-right font-semibold">Jumlah WO</th>
+                      <th className="px-4 py-3 text-right font-semibold">Persentase</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className={`border-t ${tableBorderClass}`}>
+                      <td className={`px-4 py-3 font-semibold ${headingTextClass}`}>{selected.label}</td>
+                      <td className={`px-4 py-3 text-right tabular-nums ${headingTextClass}`}>{selected.value.toLocaleString("id-ID")}</td>
+                      <td className={`px-4 py-3 text-right tabular-nums ${mutedTextClass}`}>{percentage}%</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function escapeReportHtml(value: string | number) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function buildAnalyticsReportHtml({
+  data,
+  lastUpdated,
+  statusData,
+  areaData,
+  picData,
+  agingData,
+  backlogPercentage,
+  closePercentage,
+  agingCritical,
+  dominantPic,
+  totalAreaWo,
+  totalPicWo,
+  totalAgingWo,
+}: {
+  data: AnalyticsData;
+  lastUpdated: Date | null;
+  statusData: AnalyticsChartDatum[];
+  areaData: AnalyticsChartDatum[];
+  picData: AnalyticsChartDatum[];
+  agingData: AnalyticsChartDatum[];
+  backlogPercentage: number;
+  closePercentage: number;
+  agingCritical: number;
+  dominantPic: string;
+  totalAreaWo: number;
+  totalPicWo: number;
+  totalAgingWo: number;
+}) {
+  const formatNumber = (value: number) => value.toLocaleString("id-ID");
+  const formatShortLabel = (value: string, maxLength = 12) => {
+    const aliases: Record<string, string> = {
+      "CHECK MAT": "CHECK MAT",
+      "LE SIGNED": "LE SIGN",
+      "SPS SIGNED": "SPS SIGN",
+      "EXECUTOR SIGNED": "EXEC SIGN",
+      "PLANT OK": "PLANT OK",
+    };
+
+    if (aliases[value]) return aliases[value];
+    if (value.length <= maxLength) return value;
+
+    return `${value.slice(0, maxLength - 3)}...`;
+  };
+  const renderMetric = (title: string, value: string | number, subtitle: string) => `
+    <div class="metric">
+      <div class="metric-title">${escapeReportHtml(title)}</div>
+      <div class="metric-value">${escapeReportHtml(value)}</div>
+      <div class="metric-subtitle">${escapeReportHtml(subtitle)}</div>
+    </div>
+  `;
+  const renderProgress = (title: string, value: number, color: string) => `
+    <div class="card progress-card">
+      <div>
+        <div class="section-title">${escapeReportHtml(title)}</div>
+        <div class="section-desc">${title === "Backlog Percentage" ? "Rasio backlog terhadap total work order aktif." : "Rasio close work order terhadap total WO."}</div>
+      </div>
+      <div class="progress-value">${value}%</div>
+      <div class="progress-track"><div class="progress-fill" style="width:${Math.min(value, 100)}%; background:${color};"></div></div>
+    </div>
+  `;
+  const renderBarChart = (items: AnalyticsChartDatum[], horizontal = false) => {
+    if (!items.length) return `<div class="empty">Data belum tersedia</div>`;
+
+    const maxValue = Math.max(...items.map((item) => item.value), 1);
+
+    if (horizontal) {
+      return `
+        <div class="hbar-list">
+          ${items.map((item) => `
+            <div class="hbar-row">
+              <div class="hbar-label">${escapeReportHtml(item.name)}</div>
+              <div class="hbar-track"><div class="hbar-fill" style="width:${(item.value / maxValue) * 100}%"></div></div>
+              <div class="hbar-value">${formatNumber(item.value)}</div>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    return `
+      <div class="vbar-chart">
+        ${items.slice(0, 10).map((item) => `
+          <div class="vbar-item">
+            <div class="vbar-value">${formatNumber(item.value)}</div>
+            <div class="vbar" style="height:${Math.max((item.value / maxValue) * 120, 4)}px"></div>
+            <div class="vbar-label" title="${escapeReportHtml(item.name)}">${escapeReportHtml(formatShortLabel(item.name))}</div>
+          </div>
+        `).join("")}
+      </div>
+    `;
+  };
+  const renderDonut = (items: AnalyticsChartDatum[], colors: string[], total: number) => {
+    if (!items.length || !total) return `<div class="empty">Data belum tersedia</div>`;
+
+    const radius = 54;
+    const circumference = 2 * Math.PI * radius;
+    let offset = 0;
+    const segments = items.map((item, index) => {
+      const length = (item.value / total) * circumference;
+      const dash = Math.max(length - 3, 0);
+      const dashOffset = -offset;
+      offset += length;
+
+      return `
+        <circle
+          cx="70"
+          cy="70"
+          r="${radius}"
+          fill="none"
+          stroke="${colors[index % colors.length]}"
+          stroke-width="18"
+          stroke-linecap="round"
+          stroke-dasharray="${dash} ${circumference - dash}"
+          stroke-dashoffset="${dashOffset}"
+          transform="rotate(-90 70 70)"
+        />
+      `;
+    }).join("");
+
+    return `
+      <div class="donut-wrap">
+        <svg class="donut-svg" viewBox="0 0 140 140" width="128" height="128" role="img" aria-label="Donut chart">
+          <circle cx="70" cy="70" r="${radius}" fill="none" stroke="#e2e8f0" stroke-width="18" />
+          ${segments}
+          <circle cx="70" cy="70" r="36" fill="#ffffff" />
+        </svg>
+        <div class="legend-grid">
+          ${items.map((item, index) => `
+            <div class="legend-item">
+              <span class="legend-dot" style="background:${colors[index % colors.length]}"></span>
+              <span>${escapeReportHtml(item.name)}</span>
+              <strong>${formatNumber(item.value)}</strong>
+            </div>
+          `).join("")}
+        </div>
+      </div>
+    `;
+  };
+  const renderPicTable = () => {
+    if (!picData.length) return `<div class="empty">Data belum tersedia</div>`;
+
+    return `
+      <table>
+        <thead><tr><th>PIC</th><th>Jumlah WO</th><th>Persentase</th></tr></thead>
+        <tbody>
+          ${picData.map((item) => `
+            <tr>
+              <td>${escapeReportHtml(item.name)}</td>
+              <td>${formatNumber(item.value)}</td>
+              <td>${totalPicWo ? Math.round((item.value / totalPicWo) * 100) : 0}%</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    `;
+  };
+  const renderAgingTable = () => {
+    if (!agingData.length) return `<div class="empty">Data belum tersedia</div>`;
+
+    return `
+      <table>
+        <thead><tr><th>Aging Category</th><th>Jumlah WO</th><th>Status</th></tr></thead>
+        <tbody>
+          ${agingData.map((item) => {
+            const status = getAgingStatus(item.name);
+            return `
+              <tr>
+                <td>${escapeReportHtml(item.name)}</td>
+                <td>${formatNumber(item.value)}</td>
+                <td><span class="badge ${status.toLowerCase()}">${status}</span></td>
+              </tr>
+            `;
+          }).join("")}
+        </tbody>
+      </table>
+    `;
+  };
+
+  return `
+    <style>
+      .airis-pdf-export {
+        width: 900px;
+        max-width: none;
+        background: #ffffff;
+        color: #0f172a;
+        padding: 20px;
+        font-family: Arial, Helvetica, sans-serif;
+        box-sizing: border-box;
+      }
+      .airis-pdf-export * { box-sizing: border-box; color: #0f172a; }
+      .report-header {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 16px;
+        align-items: center;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 14px;
+        margin-bottom: 10px;
+      }
+      .brand-row { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+      .report-logo { width: 118px; height: auto; display: block; object-fit: contain; }
+      .plant-name { color: #0891b2; font-size: 14px; font-weight: 800; letter-spacing: 1px; margin-top: 2px; }
+      .eyebrow { color: #0891b2; font-size: 11px; font-weight: 700; letter-spacing: 4px; margin-bottom: 7px; }
+      h1 { font-size: 25px; line-height: 1.05; margin: 0 0 7px; }
+      .subtitle, .section-desc, .metric-subtitle { color: #475569; font-size: 10px; line-height: 1.25; }
+      .updated { border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 12px; font-size: 10px; color: #475569; }
+      .updated strong { display: block; margin-top: 4px; color: #0f172a; font-size: 12px; }
+      .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 10px; }
+      .metric, .card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        box-shadow: none;
+      }
+      .metric { padding: 10px; min-height: 82px; }
+      .metric-title { color: #475569; font-size: 9px; font-weight: 700; margin-bottom: 6px; }
+      .metric-value { font-size: 23px; line-height: 1; font-weight: 800; margin-bottom: 8px; }
+      .progress-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 10px; }
+      .progress-card { padding: 10px; display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+      .section-title { font-size: 12px; font-weight: 800; margin-bottom: 4px; }
+      .progress-value { color: #0891b2; font-size: 23px; font-weight: 800; }
+      .progress-track { grid-column: 1 / -1; height: 9px; background: #e2e8f0; border-radius: 99px; overflow: hidden; }
+      .progress-fill { height: 100%; border-radius: 99px; }
+      .charts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 10px; }
+      .chart-card { padding: 10px; min-height: 224px; overflow: hidden; }
+      .vbar-chart { height: 172px; display: flex; align-items: stretch; gap: 7px; padding-top: 10px; }
+      .vbar-item { flex: 1; min-width: 0; height: 100%; display: grid; grid-template-rows: 14px 1fr 25px; text-align: center; }
+      .vbar { width: 100%; max-width: 24px; margin: auto auto 0; background: #06b6d4; border-radius: 5px 5px 0 0; }
+      .vbar-value { color: #475569; font-size: 8px; line-height: 1; align-self: end; }
+      .vbar-label { color: #475569; font-size: 7px; line-height: 1.08; max-width: 56px; margin: 5px auto 0; padding-top: 5px; border-top: 1px solid #cbd5e1; white-space: normal; overflow: hidden; overflow-wrap: normal; word-break: normal; text-align: center; }
+      .donut-wrap { display: grid; grid-template-columns: 140px 1fr; gap: 10px; align-items: center; min-height: 150px; }
+      .donut-svg { display: block; margin: 0 auto; overflow: visible; }
+      .legend-grid { display: grid; gap: 5px; }
+      .legend-item { display: grid; grid-template-columns: 10px 1fr auto; gap: 6px; align-items: center; font-size: 9px; }
+      .legend-dot { width: 8px; height: 8px; border-radius: 99px; }
+      .hbar-list { display: grid; gap: 8px; margin-top: 12px; }
+      .hbar-row { display: grid; grid-template-columns: 120px 1fr 38px; gap: 10px; align-items: center; min-height: 18px; font-size: 9px; }
+      .hbar-label { color: #475569; font-weight: 700; line-height: 1.15; white-space: normal; overflow: visible; overflow-wrap: anywhere; }
+      .hbar-track { height: 12px; border-radius: 99px; background: #e2e8f0; overflow: hidden; }
+      .hbar-fill { height: 100%; border-radius: 99px; background: #3b82f6; }
+      .hbar-value { text-align: right; font-weight: 700; }
+      .tables { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+      table { width: 100%; border-collapse: collapse; font-size: 9px; margin-top: 8px; }
+      th { color: #475569; background: #f8fafc; text-align: left; }
+      th, td { border: 1px solid #e2e8f0; padding: 5px 7px; }
+      td:nth-child(2), td:nth-child(3), th:nth-child(2), th:nth-child(3) { text-align: right; }
+      .badge { display: inline-block; border-radius: 99px; padding: 2px 7px; font-size: 8px; font-weight: 700; }
+      .normal { color: #047857; background: #dcfce7; }
+      .warning { color: #a16207; background: #fef9c3; }
+      .critical { color: #b91c1c; background: #fee2e2; }
+      .unknown { color: #475569; background: #e2e8f0; }
+      .empty { min-height: 80px; display: flex; align-items: center; justify-content: center; color: #475569; border: 1px dashed #cbd5e1; border-radius: 12px; font-size: 10px; }
+    </style>
+    <div class="airis-pdf-export">
+      <div class="report-header">
+        <div>
+          <div class="brand-row">
+            <img class="report-logo" src="${PLN_IPS_LOGO_URL}" crossorigin="anonymous" alt="PLN Indonesia Power Services" />
+            <div>
+              <div class="eyebrow">AIRIS-EVO ANALYTICS</div>
+              <div class="plant-name">PLTU KALBAR-1 2X100 MW</div>
+            </div>
+          </div>
+          <h1>Maintenance Work Order Dashboard</h1>
+          <div class="subtitle">Enterprise overview untuk status WO, backlog, corrective work, dan distribusi area.</div>
+        </div>
+        <div class="updated">Last Updated<strong>${formatTime(lastUpdated)}</strong></div>
+      </div>
+      <div class="metrics">
+        ${renderMetric("Total WO", data.total_wo, "Total work order dari endpoint analytics")}
+        ${renderMetric("Backlog WO", data.backlog_wo, "WO yang masih masuk antrean/backlog")}
+        ${renderMetric("Corrective", data.corrective, "Corrective maintenance work order")}
+        ${renderMetric("Preventive", data.preventive, "Preventive maintenance work order")}
+        ${renderMetric("Close WO", data.close_wo ?? 0, "Work order yang sudah close")}
+        ${renderMetric("Close Percentage", `${closePercentage}%`, "Rasio WO close terhadap total")}
+        ${renderMetric("Aging >30 Hari", agingCritical, "WO dengan aging critical")}
+        ${renderMetric("Dominant PIC", dominantPic, "PIC dengan jumlah WO terbesar")}
+      </div>
+      <div class="progress-grid">
+        ${renderProgress("Backlog Percentage", backlogPercentage, "linear-gradient(90deg,#06b6d4,#10b981)")}
+        ${renderProgress("Close Percentage", closePercentage, "linear-gradient(90deg,#10b981,#3b82f6)")}
+      </div>
+      <div class="charts">
+        <div class="card chart-card"><div class="section-title">Grafik Status WO</div><div class="section-desc">Distribusi work order berdasarkan status proses.</div>${renderBarChart(statusData)}</div>
+        <div class="card chart-card"><div class="section-title">Grafik Area WO</div><div class="section-desc">Proporsi work order berdasarkan area/unit kerja.</div>${renderDonut(areaData, AREA_COLORS, totalAreaWo)}</div>
+        <div class="card chart-card"><div class="section-title">Distribusi WO per PIC</div><div class="section-desc">Jumlah work order berdasarkan PIC proses.</div>${renderBarChart(picData, true)}</div>
+        <div class="card chart-card"><div class="section-title">Aging Work Order</div><div class="section-desc">Aging WO berdasarkan Scheduled Finish.</div>${renderDonut(agingData, AGING_COLORS, totalAgingWo)}</div>
+      </div>
+      <div class="tables">
+        <div class="card chart-card"><div class="section-title">Tabel Detail PIC</div><div class="section-desc">Persentase WO berdasarkan PIC proses.</div>${renderPicTable()}</div>
+        <div class="card chart-card"><div class="section-title">Tabel Aging</div><div class="section-desc">Status aging berdasarkan kategori scheduled finish.</div>${renderAgingTable()}</div>
+      </div>
+    </div>
+  `;
+}
+
+function BrowserlessReport({
+  data,
+  loading,
+  error,
+  lastUpdated,
+}: {
+  data: ReturnType<typeof useAnalytics>["data"];
+  loading: boolean;
+  error: string | null;
+  lastUpdated: Date | null;
+}) {
+  if (loading && !data) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-white text-slate-950">
+        <p className="text-sm font-semibold text-slate-600">Loading AIRIS-EVO analytics report...</p>
+      </main>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-white text-slate-950">
+        <p className="text-sm font-semibold text-red-600">Gagal mengambil data analytics.</p>
+      </main>
+    );
+  }
+
+  const statusData = toChartData(data.by_status);
+  const areaData = toChartData(data.by_area);
+  const picData = toChartData(data.by_pic);
+  const agingData = toChartData(data.by_aging);
+  const backlogPercentage = data.backlog_percentage ?? (data.total_wo ? Math.round((data.backlog_wo / data.total_wo) * 100) : 0);
+  const closePercentage = data.close_percentage ?? 0;
+  const totalAreaWo = areaData.reduce((total, item) => total + item.value, 0);
+  const totalPicWo = picData.reduce((total, item) => total + item.value, 0);
+  const totalAgingWo = agingData.reduce((total, item) => total + item.value, 0);
+  const agingCritical = data.by_aging[">30 Hari"] ?? 0;
+  const dominantPic = picData[0]?.name ?? "N/A";
+  const reportHtml = buildAnalyticsReportHtml({
+    data,
+    lastUpdated,
+    statusData,
+    areaData,
+    picData,
+    agingData,
+    backlogPercentage,
+    closePercentage,
+    agingCritical,
+    dominantPic,
+    totalAreaWo,
+    totalPicWo,
+    totalAgingWo,
+  });
+
+  return (
+    <main className="min-h-screen bg-white text-slate-950" data-browserless-ready="true">
+      <style jsx global>{`
+        @page {
+          size: A4 portrait;
+          margin: 6mm;
+        }
+
+        html,
+        body {
+          margin: 0 !important;
+          background: #ffffff !important;
+        }
+
+        * {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+      `}</style>
+      <div className="browserless-export-shell" dangerouslySetInnerHTML={{ __html: reportHtml }} />
+    </main>
+  );
+}
+
 interface AnalysisPageProps {
   embedded?: boolean;
   isDarkMode?: boolean;
@@ -250,7 +784,16 @@ interface AnalysisPageProps {
 export default function AnalysisPage({ embedded = false, isDarkMode = true }: AnalysisPageProps) {
   const { data, loading, error, lastUpdated, refresh } = useAnalytics();
   const [isExporting, setIsExporting] = useState(false);
+  const [selectedBreakdown, setSelectedBreakdown] = useState<SelectedBreakdown | null>(null);
+  const [isBrowserlessReport, setIsBrowserlessReport] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const isHeadlessBrowser = navigator.webdriver || /HeadlessChrome|Browserless/i.test(navigator.userAgent);
+
+    setIsBrowserlessReport(searchParams.get("browserless") === "1" || searchParams.get("pdf") === "1" || isHeadlessBrowser);
+  }, []);
 
   const statusData = data ? toChartData(data.by_status) : [];
   const areaData = data ? toChartData(data.by_area) : [];
@@ -263,6 +806,7 @@ export default function AnalysisPage({ embedded = false, isDarkMode = true }: An
   const totalAreaWo = areaData.reduce((total, item) => total + item.value, 0);
   const totalPicWo = picData.reduce((total, item) => total + item.value, 0);
   const totalAgingWo = agingData.reduce((total, item) => total + item.value, 0);
+  const workOrderDetails = data?.wo_details ?? [];
   const containerClass = embedded
     ? `h-full overflow-y-auto overflow-x-hidden ${isDarkMode ? "text-slate-100" : "text-slate-950"}`
     : `isolate min-h-screen overflow-x-hidden ${isDarkMode ? "bg-[#07111f] text-slate-100" : "bg-slate-50 text-slate-950"}`;
@@ -287,6 +831,26 @@ export default function AnalysisPage({ embedded = false, isDarkMode = true }: An
   const axisLineColor = isDarkMode ? "rgba(148,163,184,0.28)" : "rgba(100,116,139,0.28)";
   const tableHeaderClass = isDarkMode ? "bg-slate-950/35 text-slate-300" : "bg-slate-100 text-slate-600";
   const tableBorderClass = isDarkMode ? "border-white/10" : "border-slate-200";
+  const openBreakdown = (type: BreakdownType, title: string, item: AnalyticsChartDatum, total: number) => {
+    setSelectedBreakdown({
+      type,
+      title,
+      label: item.name,
+      value: item.value,
+      total,
+    });
+  };
+
+  if (!embedded && isBrowserlessReport) {
+    return (
+      <BrowserlessReport
+        data={data}
+        loading={loading}
+        error={error}
+        lastUpdated={lastUpdated}
+      />
+    );
+  }
 
   const handleExportPdf = async () => {
     if (!data || isExporting) return;
@@ -575,6 +1139,22 @@ export default function AnalysisPage({ embedded = false, isDarkMode = true }: An
           <div class="card chart-card"><div class="section-title">Tabel Aging</div><div class="section-desc">Status aging berdasarkan kategori scheduled finish.</div>${renderAgingTable()}</div>
         </div>
       `;
+      exportNode.className = "";
+      exportNode.innerHTML = buildAnalyticsReportHtml({
+        data,
+        lastUpdated,
+        statusData,
+        areaData,
+        picData,
+        agingData,
+        backlogPercentage,
+        closePercentage,
+        agingCritical,
+        dominantPic,
+        totalAreaWo,
+        totalPicWo,
+        totalAgingWo,
+      });
       exportNode.style.position = "fixed";
       exportNode.style.left = "-10000px";
       exportNode.style.top = "0";
@@ -864,7 +1444,14 @@ export default function AnalysisPage({ embedded = false, isDarkMode = true }: An
                       cursor={{ fill: "rgba(6,182,212,0.08)" }}
                       contentStyle={tooltipStyle}
                     />
-                    <Bar dataKey="value" radius={[8, 8, 0, 0]} fill="#06b6d4" name="WO" />
+                    <Bar
+                      dataKey="value"
+                      radius={[8, 8, 0, 0]}
+                      fill="#06b6d4"
+                      name="WO"
+                      cursor="pointer"
+                      onClick={(item) => openBreakdown("status", "Status WO", item as AnalyticsChartDatum, data.total_wo)}
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               </ChartCard>
@@ -887,6 +1474,8 @@ export default function AnalysisPage({ embedded = false, isDarkMode = true }: An
                         paddingAngle={3}
                         stroke={isDarkMode ? "rgba(15,23,42,0.85)" : "rgba(255,255,255,0.92)"}
                         strokeWidth={3}
+                        cursor="pointer"
+                        onClick={(item) => openBreakdown("area", "Area WO", item as AnalyticsChartDatum, totalAreaWo)}
                       >
                         {areaData.map((entry, index) => (
                           <Cell key={entry.name} fill={AREA_COLORS[index % AREA_COLORS.length]} />
@@ -908,9 +1497,18 @@ export default function AnalysisPage({ embedded = false, isDarkMode = true }: An
                     {areaData.map((item, index) => (
                       <div
                         key={item.name}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => openBreakdown("area", "Area WO", item, totalAreaWo)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            openBreakdown("area", "Area WO", item, totalAreaWo);
+                          }
+                        }}
                         className={`grid grid-cols-[12px_minmax(0,1fr)_42px_40px] items-center gap-2 rounded-xl px-3 py-2 text-sm ${
                           isDarkMode ? "bg-white/[0.04] text-slate-300" : "bg-slate-50 text-slate-700"
-                        }`}
+                        } cursor-pointer transition hover:ring-1 hover:ring-cyan-300/40`}
                       >
                         <span
                           className="h-3 w-3 rounded-full shadow-sm"
@@ -951,7 +1549,14 @@ export default function AnalysisPage({ embedded = false, isDarkMode = true }: An
                         tickLine={false}
                       />
                       <Tooltip cursor={{ fill: "rgba(6,182,212,0.08)" }} contentStyle={tooltipStyle} />
-                      <Bar dataKey="value" radius={[0, 8, 8, 0]} fill="#3b82f6" name="WO" />
+                      <Bar
+                        dataKey="value"
+                        radius={[0, 8, 8, 0]}
+                        fill="#3b82f6"
+                        name="WO"
+                        cursor="pointer"
+                        onClick={(item) => openBreakdown("pic", "PIC WO", item as AnalyticsChartDatum, totalPicWo)}
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
@@ -979,6 +1584,8 @@ export default function AnalysisPage({ embedded = false, isDarkMode = true }: An
                             paddingAngle={3}
                             stroke={isDarkMode ? "rgba(15,23,42,0.85)" : "rgba(255,255,255,0.92)"}
                             strokeWidth={3}
+                            cursor="pointer"
+                            onClick={(item) => openBreakdown("aging", "Aging WO", item as AnalyticsChartDatum, totalAgingWo)}
                           >
                             {agingData.map((entry, index) => (
                               <Cell key={entry.name} fill={AGING_COLORS[index % AGING_COLORS.length]} />
@@ -992,9 +1599,18 @@ export default function AnalysisPage({ embedded = false, isDarkMode = true }: An
                       {agingData.map((item, index) => (
                         <div
                           key={item.name}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => openBreakdown("aging", "Aging WO", item, totalAgingWo)}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter" || event.key === " ") {
+                              event.preventDefault();
+                              openBreakdown("aging", "Aging WO", item, totalAgingWo);
+                            }
+                          }}
                           className={`grid grid-cols-[12px_minmax(0,1fr)_42px] items-center gap-2 rounded-xl px-3 py-2 text-sm ${
                             isDarkMode ? "bg-white/[0.04] text-slate-300" : "bg-slate-50 text-slate-700"
-                          }`}
+                          } cursor-pointer transition hover:ring-1 hover:ring-cyan-300/40`}
                         >
                           <span className="h-3 w-3 rounded-full" style={{ backgroundColor: AGING_COLORS[index % AGING_COLORS.length] }} />
                           <span className="truncate font-medium">{item.name}</span>
@@ -1091,6 +1707,17 @@ export default function AnalysisPage({ embedded = false, isDarkMode = true }: An
           </>
         ) : null}
       </div>
+
+      <WorkOrderBreakdownModal
+        selected={selectedBreakdown}
+        details={workOrderDetails}
+        isDarkMode={isDarkMode}
+        headingTextClass={headingTextClass}
+        mutedTextClass={mutedTextClass}
+        tableHeaderClass={tableHeaderClass}
+        tableBorderClass={tableBorderClass}
+        onClose={() => setSelectedBreakdown(null)}
+      />
     </main>
   );
 }

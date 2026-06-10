@@ -73,6 +73,7 @@ function normalizeMetrics(value: unknown): AnalyticsMetrics | null {
     by_area: isNumberRecord(value.by_area) ? value.by_area : {},
     by_pic: isNumberRecord(value.by_pic) ? value.by_pic : {},
     by_aging: isNumberRecord(value.by_aging) ? value.by_aging : {},
+    wo_details: Array.isArray(value.wo_details) ? value.wo_details : undefined,
   };
 }
 

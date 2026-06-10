@@ -18,6 +18,19 @@ export interface AnalyticsMetrics {
   by_area: Record<string, number>;
   by_pic: Record<string, number>;
   by_aging: Record<string, number>;
+  wo_details?: WorkOrderDetail[];
+}
+
+export interface WorkOrderDetail {
+  wonum?: string | number;
+  wo_number?: string | number;
+  description?: string;
+  status?: string;
+  area?: string;
+  pic?: string;
+  aging?: string;
+  scheduled_finish?: string;
+  [key: string]: unknown;
 }
 
 export interface AnalyticsEndpointResponse {

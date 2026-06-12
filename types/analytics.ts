@@ -4,6 +4,17 @@ export interface AiSummary {
   recommendations: string[];
   priority_focus: string[];
   risk_level: string;
+  generated_at?: string;
+  data_hash?: string;
+}
+
+export interface AnalysisCacheResponse {
+  generatedAt: string;
+  riskLevel: string;
+  executiveSummary: string[];
+  keyRisks: string[];
+  recommendations: string[];
+  dataHash: string;
 }
 
 export interface AnalyticsMetrics {

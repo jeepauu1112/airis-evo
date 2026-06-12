@@ -31,19 +31,26 @@ function parseAnalyticsBody(body: string): unknown {
   }
 }
 
+function stripAiSummary(payload: unknown): unknown {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    return payload;
+  }
+
+  const record = payload as Record<string, unknown>;
+  const { ai_summary: _aiSummary, ...rest } = record;
+
+  return rest;
+}
+
 export async function GET() {
   try {
-    let response = await fetch(ANALYTICS_ENDPOINT, {
+    const response = await fetch(ANALYTICS_ENDPOINT, {
       method: "GET",
       cache: "no-store",
+      headers: {
+        "x-airis-ai-summary-source": "cache",
+      },
     });
-
-    if (!response.ok) {
-      response = await fetch(ANALYTICS_ENDPOINT, {
-        method: "POST",
-        cache: "no-store",
-      });
-    }
 
     const body = await response.text();
 
@@ -54,7 +61,7 @@ export async function GET() {
       );
     }
 
-    return NextResponse.json(parseAnalyticsBody(body));
+    return NextResponse.json(stripAiSummary(parseAnalyticsBody(body)));
   } catch (error) {
     console.error("Analytics proxy error:", error);
     return NextResponse.json({ error: "Gagal mengambil data analytics" }, { status: 502 });

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { AiSummary, AnalyticsMetrics, AnalyticsResponse, UseAnalyticsResult } from "@/types/analytics";
+import type { AnalyticsMetrics, AnalyticsResponse, UseAnalyticsResult } from "@/types/analytics";
 
 const ANALYTICS_ENDPOINT = "/api/analysis";
 const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
@@ -16,18 +16,6 @@ function isNumberRecord(value: unknown): value is Record<string, number> {
   return (
     isRecord(value) &&
     Object.values(value).every((item) => typeof item === "number")
-  );
-}
-
-function isAiSummary(value: unknown): value is AiSummary {
-  if (!isRecord(value)) return false;
-
-  return (
-    Array.isArray(value.executive_summary) &&
-    Array.isArray(value.key_risks) &&
-    Array.isArray(value.recommendations) &&
-    Array.isArray(value.priority_focus) &&
-    typeof value.risk_level === "string"
   );
 }
 
@@ -88,7 +76,7 @@ function normalizeAnalyticsResponse(value: unknown): AnalyticsResponse | null {
   return {
     success: true,
     ...metrics,
-    ai_summary: isAiSummary(value.ai_summary) ? value.ai_summary : null,
+    ai_summary: null,
   };
 }
 

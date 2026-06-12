@@ -33,6 +33,7 @@ import {
 import { AnalyticsSkeleton } from "@/components/analysis/AnalyticsSkeleton";
 import { ChartCard } from "@/components/analysis/ChartCard";
 import { SummaryCard } from "@/components/analysis/SummaryCard";
+import { useAnalysisCache } from "@/hooks/useAnalysisCache";
 import { useAnalytics } from "@/hooks/useAnalytics";
 import type { AiSummary, AnalyticsChartDatum, WorkOrderDetail } from "@/types/analytics";
 
@@ -112,6 +113,7 @@ function getRiskBadgeClass(riskLevel: string | undefined, isDarkMode: boolean): 
 function ExecutiveSummaryCard({
   aiSummary,
   isLoading,
+  error,
   isDarkMode,
   panelClass,
   headingTextClass,
@@ -119,6 +121,7 @@ function ExecutiveSummaryCard({
 }: {
   aiSummary?: AiSummary | null;
   isLoading: boolean;
+  error?: string | null;
   isDarkMode: boolean;
   panelClass: string;
   headingTextClass: string;
@@ -140,7 +143,21 @@ function ExecutiveSummaryCard({
       <section className={`exclude-from-pdf card rounded-2xl border p-5 shadow-2xl backdrop-blur-xl ${panelClass}`}>
         <div className="flex items-center gap-3 text-cyan-300">
           <Sparkles size={20} />
-          <p className="text-sm font-semibold">Generating Executive Summary...</p>
+          <p className="text-sm font-semibold">Memuat cache Executive Summary...</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (error && !aiSummary) {
+    return (
+      <section className={`exclude-from-pdf card rounded-2xl border p-5 shadow-2xl backdrop-blur-xl ${panelClass}`}>
+        <div className="flex items-start gap-3">
+          <AlertTriangle className="mt-0.5 text-red-300" size={20} />
+          <div>
+            <h2 className={`text-xl font-bold ${headingTextClass}`}>Executive Summary AI</h2>
+            <p className={`mt-2 text-sm ${isDarkMode ? "text-red-200" : "text-red-700"}`}>{error}</p>
+          </div>
         </div>
       </section>
     );
@@ -169,11 +186,17 @@ function ExecutiveSummaryCard({
           <p className={`mt-2 text-sm ${mutedTextClass}`}>
             AI-generated management insight berdasarkan data Work Order terbaru.
           </p>
+          <p className={`mt-2 text-xs ${mutedTextClass}`}>
+            Last generated: {aiSummary.generated_at || "Unknown"}
+          </p>
         </div>
 
-        <span className={`inline-flex w-fit items-center rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] ${getRiskBadgeClass(aiSummary.risk_level, isDarkMode)}`}>
-          Risk: {aiSummary.risk_level || "Unknown"}
-        </span>
+        <div className="flex flex-col items-start gap-2 md:items-end">
+          <span className={`inline-flex w-fit items-center rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] ${getRiskBadgeClass(aiSummary.risk_level, isDarkMode)}`}>
+            Risk: {aiSummary.risk_level || "Unknown"}
+          </span>
+          {error && <span className={`text-xs ${isDarkMode ? "text-amber-200" : "text-amber-700"}`}>{error}</span>}
+        </div>
       </div>
 
       <div className="mt-5 grid gap-4 lg:grid-cols-[1.15fr_1fr]">
@@ -783,6 +806,12 @@ interface AnalysisPageProps {
 
 export default function AnalysisPage({ embedded = false, isDarkMode = true }: AnalysisPageProps) {
   const { data, loading, error, lastUpdated, refresh } = useAnalytics();
+  const {
+    summary: aiSummary,
+    loading: aiSummaryLoading,
+    error: aiSummaryError,
+    refresh: refreshAiSummary,
+  } = useAnalysisCache();
   const [isExporting, setIsExporting] = useState(false);
   const [selectedBreakdown, setSelectedBreakdown] = useState<SelectedBreakdown | null>(null);
   const [isBrowserlessReport, setIsBrowserlessReport] = useState(false);
@@ -839,6 +868,9 @@ export default function AnalysisPage({ embedded = false, isDarkMode = true }: An
       value: item.value,
       total,
     });
+  };
+  const handleRefreshData = async () => {
+    await Promise.all([refresh(), refreshAiSummary()]);
   };
 
   if (!embedded && isBrowserlessReport) {
@@ -1250,11 +1282,11 @@ export default function AnalysisPage({ embedded = false, isDarkMode = true }: An
             </div>
             <button
               type="button"
-              onClick={() => void refresh()}
-              disabled={loading}
+              onClick={() => void handleRefreshData()}
+              disabled={loading || aiSummaryLoading}
               className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-500 px-5 text-sm font-semibold text-white shadow-lg shadow-cyan-500/25 transition hover:from-cyan-400 hover:to-blue-400 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
+              <RefreshCw size={18} className={loading || aiSummaryLoading ? "animate-spin" : ""} />
               Refresh Data
             </button>
             <button
@@ -1274,8 +1306,9 @@ export default function AnalysisPage({ embedded = false, isDarkMode = true }: An
         </header>
 
         <ExecutiveSummaryCard
-          aiSummary={data?.ai_summary ?? null}
-          isLoading={loading && !data}
+          aiSummary={aiSummary}
+          isLoading={aiSummaryLoading && !aiSummary}
+          error={aiSummaryError}
           isDarkMode={isDarkMode}
           panelClass={panelClass}
           headingTextClass={headingTextClass}
@@ -1289,7 +1322,7 @@ export default function AnalysisPage({ embedded = false, isDarkMode = true }: An
               <div>
                 <h2 className="font-semibold">Gagal mengambil data analytics</h2>
                 <p className="mt-1 text-sm text-red-200/80">
-                  Periksa koneksi endpoint n8n lalu tekan Refresh Data.
+                  Periksa koneksi endpoint analytics lalu tekan Refresh Data.
                 </p>
               </div>
             </div>

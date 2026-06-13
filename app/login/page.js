@@ -215,7 +215,7 @@ export default function LoginPage() {
 
           {/* Footer */}
           <p className="text-center text-gray-500 text-xs mt-8">
-            By signing in, you agree to our Terms of Service and Privacy Policy
+            Make Easy For Others
           </p>
         </div>
       </div>

@@ -1322,7 +1322,7 @@ export default function AnalysisPage({ embedded = false, isDarkMode = true }: An
               <div>
                 <h2 className="font-semibold">Gagal mengambil data analytics</h2>
                 <p className="mt-1 text-sm text-red-200/80">
-                  Periksa koneksi endpoint analytics lalu tekan Refresh Data.
+                  {error}
                 </p>
               </div>
             </div>

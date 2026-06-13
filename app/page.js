@@ -37,6 +37,17 @@ function normalizeQuestion(question) {
   return question.trim().toLowerCase().replace(/\s+/g, ' ');
 }
 
+function getUserFirstName(profile, user) {
+  const sourceName = profile?.full_name || user?.user_metadata?.full_name || user?.email || 'User';
+  const normalizedName = String(sourceName)
+    .split('@')[0]
+    .replace(/[._-]+/g, ' ')
+    .trim();
+  const firstName = normalizedName.split(/\s+/)[0] || 'User';
+
+  return firstName.charAt(0).toUpperCase() + firstName.slice(1);
+}
+
 function getChatResponseCacheKey(sessionId) {
   return `${CHAT_RESPONSE_CACHE_PREFIX}:${sessionId}`;
 }
@@ -692,6 +703,7 @@ export default function AirisGemini() {
   const disabledSendClass = isDarkMode
     ? 'bg-slate-600 text-slate-400 cursor-not-allowed'
     : 'bg-slate-200 text-slate-400 cursor-not-allowed';
+  const userFirstName = getUserFirstName(profile, user);
 
   return (
     <div className={`flex h-screen ${shellClass}`}>
@@ -902,14 +914,14 @@ export default function AirisGemini() {
             <div className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto px-4 py-6 md:px-8">
               {/* WELCOME STATE */}
               {messages.length === 0 && (
-                <div className={`mx-auto flex h-full max-w-3xl flex-col items-center justify-center px-4 pb-20 text-center ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
-                  <div className={`mb-6 flex h-14 w-14 items-center justify-center rounded-2xl ${isDarkMode ? 'bg-slate-800/40 border border-slate-700/50 shadow-2xl shadow-cyan-500/20' : 'bg-slate-100'}`} aria-hidden>
+                <div className={`mx-auto flex h-full max-w-4xl flex-col items-center justify-center px-4 pb-16 text-center ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+                  <div className={`mb-6 flex h-14 w-14 items-center justify-center rounded-2xl ${isDarkMode ? 'bg-slate-800/40 border border-slate-700/50 shadow-2xl shadow-cyan-500/20' : 'bg-white shadow-lg shadow-slate-200/70'}`} aria-hidden>
                     <Infinity size={30} className="text-cyan-300" />
                   </div>
-                  <h1 className={`mb-3 text-3xl font-semibold md:text-[2.15rem] ${isDarkMode ? 'text-slate-100' : 'text-slate-950'}`}>
-                    Apa yang bisa saya bantu?
+                  <h1 className={`mb-4 text-[2.65rem] font-light leading-tight tracking-normal sm:text-5xl md:text-6xl ${isDarkMode ? 'text-slate-100' : 'text-slate-950'}`}>
+                    Semangat Pagi, {userFirstName}
                   </h1>
-                  <p className={`mb-8 max-w-xl text-base leading-relaxed ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                  <p className={`mb-8 max-w-xl text-base leading-relaxed md:text-lg ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
                     Tanyakan kebutuhan operasional, spesifikasi peralatan, atau analisis data.
                   </p>
                   <div className="hidden w-full max-w-2xl grid-cols-1 gap-3 md:grid-cols-3">

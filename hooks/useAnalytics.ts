@@ -80,6 +80,23 @@ function normalizeAnalyticsResponse(value: unknown): AnalyticsResponse | null {
   };
 }
 
+async function getAnalyticsErrorMessage(response: Response): Promise<string> {
+  try {
+    const payload: unknown = await response.json();
+
+    if (!isRecord(payload)) {
+      return `Gagal mengambil data analytics (${response.status})`;
+    }
+
+    const detail = typeof payload.detail === "string" ? payload.detail : "";
+    const error = typeof payload.error === "string" ? payload.error : "Gagal mengambil data analytics";
+
+    return detail ? `${error}: ${detail}` : `${error} (${response.status})`;
+  } catch {
+    return `Gagal mengambil data analytics (${response.status})`;
+  }
+}
+
 export function useAnalytics(): UseAnalyticsResult {
   const [data, setData] = useState<AnalyticsResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -105,7 +122,7 @@ export function useAnalytics(): UseAnalyticsResult {
       });
 
       if (!response.ok) {
-        throw new Error(`Analytics endpoint returned ${response.status}`);
+        throw new Error(await getAnalyticsErrorMessage(response));
       }
 
       const payload: unknown = await response.json();
@@ -124,7 +141,7 @@ export function useAnalytics(): UseAnalyticsResult {
         return;
       }
 
-      setError("Gagal mengambil data analytics");
+      setError(fetchError instanceof Error ? fetchError.message : "Gagal mengambil data analytics");
     } finally {
       setLoading(false);
     }
